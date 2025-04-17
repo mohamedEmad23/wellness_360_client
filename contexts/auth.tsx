@@ -58,7 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = (userData: User) => {
-    console.log("userData", userData)
     setUser(userData)
     if (typeof window !== 'undefined') {
       localStorage.setItem('user', JSON.stringify(userData))
