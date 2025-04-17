@@ -1,32 +1,44 @@
-FROM node:18-alpine AS base
+# Step 1: Install dependencies and build the app
+FROM node:18-alpine AS builder
+
 WORKDIR /app
 
-FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the app files
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV NODE_ENV production
+
+# Set build-time environment variable
+ARG NEXT_PUBLIC_API_URL=https://wellness-360-server.onrender.com
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+# Build the app
 RUN npm run build
 
-FROM base AS runner
+# Step 2: Use a lighter image to serve the built app
+FROM node:18-alpine AS runner
 
-RUN addgroup --system --gid 1001 nodejs \
-    && adduser --system --uid 1001 nextjs
+# Create a non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
 WORKDIR /app
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
 
+# Copy necessary files from builder
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+# Set environment variables
+ENV NODE_ENV production
+ENV NEXT_PUBLIC_API_URL=https://wellness-360-server.onrender.com
+ENV PORT 3000
 
 USER nextjs
-
 EXPOSE 3000
 
-CMD ["node", ".next/standalone/server.js"]
+CMD ["npm", "start"]
