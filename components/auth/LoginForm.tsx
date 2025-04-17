@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { LogIn } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/auth'
 
-export default function LoginForm() {
+// Create a separate component to use searchParams to prevent the error
+function LoginFormContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login: authLogin } = useAuth()
@@ -156,5 +157,20 @@ export default function LoginForm() {
         </form>
       </div>
     </div>
+  )
+}
+
+// Export a Suspense-wrapped version of the form
+export default function LoginForm() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-black px-4">
+        <div className="w-full max-w-md p-8 flex items-center justify-center">
+          <div className="animate-pulse text-primary">Loading...</div>
+        </div>
+      </div>
+    }>
+      <LoginFormContent />
+    </Suspense>
   )
 }
