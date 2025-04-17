@@ -33,7 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    console.log(user)
     // Check for stored user data
     const checkAuth = () => {
       if (typeof window !== 'undefined') {

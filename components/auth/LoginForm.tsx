@@ -45,7 +45,6 @@ function LoginFormContent() {
       
       const result = await response.json()
       
-      console.log('Login response:', result)
 
       if (response.ok && result) {
         // Get user data from response
