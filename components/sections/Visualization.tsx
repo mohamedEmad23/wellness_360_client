@@ -4,12 +4,12 @@ const visualizations = [
   {
     title: 'Activity Dashboard',
     description: 'Track your daily activity with intuitive visualizations.',
-    image: '/dashboard.png'
+    image: '/images/dashboard.png'
   },
   {
     title: 'Sleep Analysis',
     description: 'Understand your sleep patterns and improve your rest.',
-    image: '/sleep-analysis.png'
+    image: '/images/sleep-analysis.png'
   }
 ]
 

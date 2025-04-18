@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+// Import static assets
+import posterImage from '../../public/images/fitness-poster.jpg'
 
 export default function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -63,7 +65,7 @@ export default function Hero() {
             loop
             playsInline
             className="object-cover object-center w-full h-full"
-            poster="/images/fitness-poster.jpg"
+            poster={posterImage.src}
             onError={() => setVideoFailed(true)}
           >
             <source src="/videos/fitness-video.mp4" type="video/mp4" />
@@ -71,7 +73,7 @@ export default function Hero() {
           </video>
         ) : (
           <Image
-            src="/images/fitness-poster.jpg"
+            src={posterImage}
             alt="Fitness Training"
             fill
             priority
