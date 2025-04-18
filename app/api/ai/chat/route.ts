@@ -92,13 +92,6 @@ export async function POST(req: Request) {
     // Parse successful response
     const result = await response.json()
     
-    // Log successful response
-    logApiEvent('response', {
-      requestId,
-      sessionId: result.sessionId,
-      responseLength: result.response?.length || 0,
-      duration: Date.now() - startTime
-    })
     
     // Return formatted response
     return NextResponse.json({ 

@@ -84,3 +84,33 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 <div align="center">
   <p>Made with ❤️ for a healthier tomorrow</p>
 </div>
+
+## Media Requirements
+
+### Hero Section Media
+
+1. **Local Background Video**
+   - `/public/videos/fitness-video.mp4` - High-quality fitness video for the hero section background
+   - This video was downloaded from YouTube (original source: https://www.youtube.com/watch?v=Sc7LUjbKBHw)
+   - Benefits of using a local video file:
+     - Faster loading times (no external API dependencies)
+     - Works without an internet connection in development
+     - Complete control over the video quality and compression
+     - No YouTube branding or loading delays
+   
+2. **Fallback Image**
+   - `/public/images/fitness-poster.jpg` - Static image that displays:
+     - When the video is loading
+     - If video playback fails
+     - On mobile devices (for performance)
+     - When JavaScript is disabled
+     - Should match the video content for a seamless experience
+   
+3. **Implementation Details**
+   - Direct video embedding using the HTML5 video tag with:
+     - Autoplay and loop functionality
+     - Muted by default (required for autoplay)
+     - Responsive sizing with object-fit: cover
+     - Error handling for graceful fallbacks
+   - Mobile devices automatically receive the static image for better performance
+   - A gradient overlay ensures text readability regardless of the background content
