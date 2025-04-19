@@ -15,7 +15,7 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
-  const { isAuthenticated, isLoading } = useAuth()
+  const { updateUser, isAuthenticated, isLoading } = useAuth()
 
   // Handle responsive behavior
   useEffect(() => {

@@ -40,8 +40,8 @@ function CompleteProfileFormContent() {
         | 'very active'
         | 'extremely active',
       goal: formData.get('goal') as 'maintain' | 'lose' | 'gain',
-      dailyCalories: 3000, // static for now
-      caloriesLeft: 3000
+      dailyCalories: parseInt(formData.get('dailyCalories') as string),
+      caloriesLeft: parseInt(formData.get('dailyCalories') as string) // Initially same as dailyCalories
     }
 
     try {
@@ -187,6 +187,22 @@ function CompleteProfileFormContent() {
                   <option value="lose">Lose Weight</option>
                   <option value="gain">Gain Weight</option>
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="dailyCalories" className="block text-sm font-medium mb-2">
+                  Daily Calorie Goal
+                </label>
+                <input
+                  id="dailyCalories"
+                  name="dailyCalories"
+                  type="number"
+                  min="500"
+                  max="10000"
+                  required
+                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-200"
+                  placeholder="2000"
+                />
               </div>
             </div>
           </div>

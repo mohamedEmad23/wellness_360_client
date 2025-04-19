@@ -1,5 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// make get request to fetch user data
+export async function GET(req: NextRequest) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${req.cookies.get('access_token')?.value}`,
+            },
+        });
+
+        const result = await response.json();
+        // Create response
+        return new NextResponse(
+            JSON.stringify({
+                success: response.ok,
+                message: response.ok ? 'User data fetched successfully!' : result.message || `Request failed with status ${response.status}`,
+                data: response.ok ? result : undefined,
+            }),
+            {
+                status: response.status,
+                headers: { 'Content-Type': 'application/json' },
+            }
+        );
+    } catch (error: any) {
+        console.error('User data fetch error:', error);
+        return NextResponse.json(
+            {
+                success: false,
+                message: error.message || 'Failed to fetch user data',
+            },
+            { status: 500 }
+        );
+    }
+}
 export async function PUT(req: NextRequest) {
     const body = await req.json();
 
