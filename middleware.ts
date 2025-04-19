@@ -21,16 +21,21 @@ const protectedPaths = [
 ]
 
 export async function middleware(request: NextRequest) {
+  
   const { pathname } = request.nextUrl
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }  
 
   // Check if the path is public, always accessible, or protected
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
   const isAlwaysAccessible = alwaysAccessible.some(path => pathname === path)
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path)) || 
                           (!isPublicPath && !isAlwaysAccessible)
-
-  // Get the token from cookies
+  
+  // Get the tokens from cookies
   const token = request.cookies.get('access_token')?.value
+  const isProfileCompleted = request.cookies.get('isProfileCompleted')?.value
 
   // If the path is public and user is authenticated, redirect to dashboard
   if (isPublicPath && token && !isAlwaysAccessible) {
@@ -40,17 +45,31 @@ export async function middleware(request: NextRequest) {
   // If the path is protected and user is not authenticated, redirect to login
   if (isProtectedPath && !token) {
     const response = NextResponse.redirect(new URL('/login', request.url))
-    
-    // Store the original path to redirect back after login
     response.cookies.set('redirectTo', pathname, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
     })
-    
     return response
-  } 
+  }
+
+  // If user is authenticated but profile is not completed
+  if (token && isProfileCompleted === 'false') {
+    // Allow access to complete-profile page
+    if (pathname === '/complete-profile') {
+      return NextResponse.next()
+    }
+    // Redirect to complete-profile for all other protected paths
+    if (isProtectedPath) {
+      return NextResponse.redirect(new URL('/complete-profile', request.url))
+    }
+  }
+
+  // If trying to access complete-profile when profile is already completed
+  if (pathname === '/complete-profile' && token && isProfileCompleted !== 'false') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
 
   return NextResponse.next()
 }
@@ -58,16 +77,6 @@ export async function middleware(request: NextRequest) {
 // Configure paths that trigger the middleware
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     * - api routes that don't require authentication
-     * - videos folder
-     * - images folder
-     */
     '/((?!_next/static|_next/image|favicon.ico|public|api/auth|videos|images).*)',
   ],
-} 
+}

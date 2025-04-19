@@ -20,13 +20,18 @@ export async function POST(req: Request) {
     },
   })
 
-  // Get the cookie from response header and rename it to access_token if needed
-  const setCookie = response.headers.get('set-cookie')
-  if (setCookie) {
-    // If the backend returns accessToken, rename it to access_token
-    const updatedCookie = setCookie.replace(/accessToken=/g, 'access_token=')
-    res.headers.set('Set-Cookie', updatedCookie)
-  }
+  res.cookies.set('access_token', resBody.access_token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  })
 
+  if (!resBody.user.isProfileCompleted) {
+    res.cookies.set('isProfileCompleted', 'false', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    })
+  }
   return res
 } 

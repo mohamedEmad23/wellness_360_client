@@ -49,10 +49,10 @@ function LoginFormContent() {
       if (response.ok && result) {
         // Get user data from response
         const userData = {
-          email: result.email || data.email,
-          firstName: result.firstName || '',
-          lastName: result.lastName || '',
-          isEmailVerified: result.isEmailVerified || true
+          email: result.user.email || data.email,
+          firstName: result.user.firstName || '',
+          lastName: result.user.lastName || '',
+          isEmailVerified: result.user.isEmailVerified || true
         }
         
         // Use the auth context to set user data and handle redirect
