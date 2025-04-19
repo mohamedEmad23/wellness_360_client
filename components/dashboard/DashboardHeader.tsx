@@ -42,15 +42,6 @@ export default function DashboardHeader({
             </button>
           )}
           
-          {title === 'Activity Tracking' && (
-            <button 
-              className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Entry</span>
-            </button>
-          )}
-          
           {title === 'Calendar' && (
             <button 
               className="flex items-center gap-2 bg-white/10 hover:bg-white/15 px-4 py-2 rounded-lg transition-colors"
