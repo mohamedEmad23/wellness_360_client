@@ -33,7 +33,14 @@ export default function ProfileForm() {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/user')
+      const response = await fetch('/api/user', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
       const result = await response.json()
 
       if (result.success) {

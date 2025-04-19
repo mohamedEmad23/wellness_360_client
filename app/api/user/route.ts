@@ -1,22 +1,28 @@
+'use server';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-// make get request to fetch user data
+// GET handler
 export async function GET(req: NextRequest) {
+    const accessToken = cookies().get('access_token')?.value;
+
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${req.cookies.get('access_token')?.value}`,
+                'Authorization': `Bearer ${accessToken}`,
             },
         });
 
         const result = await response.json();
-        // Create response
+
         return new NextResponse(
             JSON.stringify({
                 success: response.ok,
-                message: response.ok ? 'User data fetched successfully!' : result.message || `Request failed with status ${response.status}`,
+                message: response.ok
+                    ? 'User data fetched successfully!'
+                    : result.message || `Request failed with status ${response.status}`,
                 data: response.ok ? result : undefined,
             }),
             {
@@ -35,7 +41,10 @@ export async function GET(req: NextRequest) {
         );
     }
 }
+
+// PUT handler
 export async function PUT(req: NextRequest) {
+    const accessToken = cookies().get('access_token')?.value;
     const body = await req.json();
 
     try {
@@ -43,13 +52,13 @@ export async function PUT(req: NextRequest) {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${req.cookies.get('access_token')?.value}`,
+                'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify(body),
         });
 
         const result = await response.json();
-        // Create response
+
         const res = new NextResponse(
             JSON.stringify({
                 success: response.ok,
@@ -64,10 +73,11 @@ export async function PUT(req: NextRequest) {
             }
         );
 
-    
+        // Delete cookie if update was successful
         if (response.ok) {
-            res.cookies.delete('isProfileCompleted')
-        }    
+            cookies().delete('isProfileCompleted');
+        }
+
         return res;
     } catch (error: any) {
         console.error('Profile update error:', error);
