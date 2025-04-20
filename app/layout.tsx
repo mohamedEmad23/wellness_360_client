@@ -4,11 +4,15 @@ import './globals.css'
 import Template from '@/components/layout/Template'
 import { AuthProvider } from '@/contexts/auth'
 
+
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Wellness 360',
   description: 'Your complete wellness companion',
+  icons: {
+    icon: '/icons/moon.svg'
+  }
 }
 
 export default function RootLayout({
@@ -25,4 +29,4 @@ export default function RootLayout({
       </body>
     </html>
   )
-} 
+}
