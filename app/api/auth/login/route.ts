@@ -10,6 +10,17 @@ export async function POST(req: Request) {
     credentials: 'include', // Required to receive the Set-Cookie
   })
 
+  if (!response.ok) {
+    const resBody = await response.json()
+    return NextResponse.json(
+      {
+        success: false,
+        message: resBody.message || `Request failed with status ${response.status}`,
+      },
+      { status: response.status }
+    )
+  }
+
   const resBody = await response.json()
 
   // Create a raw HTTP response

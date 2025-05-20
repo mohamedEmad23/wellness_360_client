@@ -1,9 +1,8 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+
   images: {
-    domains: ['wellness-360-client.onrender.com'],
-    // Add additional security for remote images
     remotePatterns: [
       {
         protocol: 'https',
@@ -11,17 +10,15 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-    // Enable image optimization for imported images
     disableStaticImages: false,
+    formats: ['image/webp', 'image/avif'],
   },
-  // Enable output standalone for Docker deployment
+
   output: 'standalone',
-  
-  // Add proper MIME type handling for static assets
+
   async headers() {
     return [
       {
-        // Apply these headers to all routes
         source: '/:path*',
         headers: [
           {
@@ -31,7 +28,6 @@ const nextConfig = {
         ],
       },
       {
-        // Specific headers for video files
         source: '/videos/:path*',
         headers: [
           {
