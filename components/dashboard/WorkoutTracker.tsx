@@ -94,7 +94,6 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     setError(null)
     
     try {
-      console.log('Fetching activities...')
       const response = await fetch('/api/activity?type=activities')
       
       if (!response.ok) {
@@ -102,10 +101,9 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       }
       
       const data = await response.json()
-      console.log('Activities fetched:', data)
       setActivities(data)
     } catch (error) {
-      console.error('Error fetching activities:', error)
+      
       setError('Could not load activities. Please try again.')
     } finally {
       setIsLoading(false)
@@ -116,7 +114,6 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     setIsLoadingLogs(true)
     
     try {
-      console.log('Fetching user activity logs...')
       const response = await fetch('/api/activity')
       
       if (!response.ok) {
@@ -124,10 +121,9 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       }
       
       const data = await response.json()
-      console.log('User activity logs fetched:', data)
       setUserActivityLogs(data)
     } catch (error) {
-      console.error('Error fetching user activity logs:', error)
+      setError('Could not load activities. Please try again.')
     } finally {
       setIsLoadingLogs(false)
     }
@@ -146,9 +142,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     setIsSubmitting(true)
     setError(null)
     
-    try {
-      console.log('Submitting activity:', formData)
-      
+    try {      
       const response = await fetch('/api/activity', {
         method: 'POST',
         headers: {
