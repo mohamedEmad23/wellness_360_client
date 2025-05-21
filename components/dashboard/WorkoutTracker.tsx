@@ -5,6 +5,8 @@ import {
   ChevronDown, 
   Activity, 
   Loader2,
+  X,
+  AlertTriangle,
   Wind,
   Bike,
   Dumbbell,
@@ -25,36 +27,34 @@ import {
   Trophy,
   HandIcon,
   Table2,
-  Trash2,
-  X,
-  AlertTriangle
+  Trash2
 } from 'lucide-react'
 import { 
-  FaRunning, 
-  FaWalking, 
-  FaBiking, 
-  FaSwimmer, 
+  FaPersonRunning, 
+  FaPersonWalking, 
+  FaPersonBiking, 
+  FaPersonSwimming, 
   FaDumbbell, 
   FaFire, 
   FaFutbol, 
-  FaBasketballBall, 
-  FaVolleyballBall, 
+  FaBasketball, 
+  FaVolleyball, 
   FaHockeyPuck, 
-  FaTableTennis, 
-  FaHandRock, 
   FaMountain, 
   FaSnowflake, 
-  FaSkating, 
-  FaGolfBall, 
+  FaGolfBallTee, 
   FaMusic, 
-  FaPray, 
   FaTrophy,
   FaShip,
   FaWater,
   FaFlag,
   FaHeart,
-  FaTable
-} from 'react-icons/fa'
+  FaTable,
+  FaPersonHiking,
+  FaHandFist
+} from 'react-icons/fa6'
+import { MdSportsTennis, MdSportsHandball, MdSelfImprovement } from 'react-icons/md'
+import { FaTableTennis } from 'react-icons/fa'
 
 interface Activity {
   id: string;
@@ -120,6 +120,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     setError(null)
     
     try {
+      console.log('Fetching activities...')
       const response = await fetch('/api/activity?type=activities')
       
       if (!response.ok) {
@@ -127,9 +128,10 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       }
       
       const data = await response.json()
+      console.log('Activities fetched:', data)
       setActivities(data)
     } catch (error) {
-      
+      console.error('Error fetching activities:', error)
       setError('Could not load activities. Please try again.')
     } finally {
       setIsLoading(false)
@@ -140,6 +142,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     setIsLoadingLogs(true)
     
     try {
+      console.log('Fetching user activity logs...')
       const response = await fetch('/api/activity')
       
       if (!response.ok) {
@@ -147,9 +150,10 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       }
       
       const data = await response.json()
+      console.log('User activity logs fetched:', data)
       setUserActivityLogs(data)
     } catch (error) {
-      setError('Could not load activities. Please try again.')
+      console.error('Error fetching user activity logs:', error)
     } finally {
       setIsLoadingLogs(false)
     }
@@ -168,7 +172,9 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     setIsSubmitting(true)
     setError(null)
     
-    try {      
+    try {
+      console.log('Submitting activity:', formData)
+      
       const response = await fetch('/api/activity', {
         method: 'POST',
         headers: {
@@ -285,19 +291,19 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     
     // Running & Cardio
     if (name.includes('run') || name.includes('jog')) {
-      return <FaRunning size={20} className="text-blue-400" />;
+      return <FaPersonRunning size={20} className="text-blue-400" />;
     } else if (name.includes('walk')) {
-      return <FaWalking size={20} className="text-teal-400" />;
+      return <FaPersonWalking size={20} className="text-teal-400" />;
     } else if (name.includes('jump') || name.includes('rope')) {
-      return <FaRunning size={20} className="text-blue-200" />;
+      return <CircleDashed size={20} className="text-blue-200" />;
       
     // Cycling  
     } else if (name.includes('bike') || name.includes('cycl')) {
-      return <FaBiking size={20} className="text-green-400" />;
+      return <FaPersonBiking size={20} className="text-green-400" />;
       
     // Water sports  
     } else if (name.includes('swim')) {
-      return <FaSwimmer size={20} className="text-cyan-400" />;
+      return <FaPersonSwimming size={20} className="text-cyan-400" />;
     } else if (name.includes('surf') || name.includes('paddle')) {
       return <FaWater size={20} className="text-sky-400" />;
     } else if (name.includes('row') || name.includes('canoe') || name.includes('kayak')) {
@@ -313,48 +319,48 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     } else if (name.includes('soccer') || name.includes('football')) {
       return <FaFutbol size={20} className="text-emerald-400" />;
     } else if (name.includes('basketball')) {
-      return <FaBasketballBall size={20} className="text-orange-400" />;
+      return <FaBasketball size={20} className="text-orange-400" />;
     } else if (name.includes('volleyball')) {
-      return <FaVolleyballBall size={20} className="text-yellow-300" />;
+      return <FaVolleyball size={20} className="text-yellow-300" />;
     } else if (name.includes('hockey')) {
       return <FaHockeyPuck size={20} className="text-blue-300" />;
       
     // Racquet Sports
-    } else if (name.includes('tennis') || name.includes('badminton')) {
-      return <FaTableTennis size={20} className="text-green-300" />;
-    } else if (name.includes('table tennis') || name.includes('ping pong')) {
-      return <FaTableTennis size={20} className="text-blue-200" />;
+  } else if (name.includes('table tennis') || name.includes('ping pong')) {
+    return <FaTableTennis size={20} className="text-blue-200" />;
+    } else if (name.includes('tennis')) {
+      return <MdSportsTennis size={20} className="text-green-300" />;
+    } else if (name.includes('badminton')) {
+      return <MdSportsTennis size={20} className="text-green-300" />;
+    
       
     // Combat Sports  
     } else if (name.includes('box') || name.includes('fight')) {
-      return <FaHandRock size={20} className="text-red-500" />;
+      return <FaHandFist size={20} className="text-red-500" />;
     } else if (name.includes('martial') || name.includes('karate') || name.includes('judo')) {
-      return <FaHandRock size={20} className="text-gray-300" />;
+      return <FaHandFist size={20} className="text-gray-300" />;
       
     // Outdoor Activities  
-    } else if (name.includes('hike') || name.includes('climb')) {
-      return <FaMountain size={20} className="text-amber-400" />;
+    } else if (name.includes('hiking') || name.includes('climb')) {
+      return <Mountain size={20} className="text-amber-400" />;
     } else if (name.includes('ski') || name.includes('snowboard')) {
-      return <FaSnowflake size={20} className="text-indigo-400" />;
+      return <Snowflake size={20} className="text-indigo-400" />;
     } else if (name.includes('skate')) {
-      return <FaSkating size={20} className="text-purple-300" />;
-    } else if (name.includes('golf')) {
-      return <FaGolfBall size={20} className="text-green-500" />;
+      return <Wind size={20} className="text-purple-300" />;
+   
       
     // Dance & Rhythmic  
     } else if (name.includes('danc')) {
       return <FaMusic size={20} className="text-pink-400" />;
-    } else if (name.includes('aerobic')) {
-      return <FaHeart size={20} className="text-orange-300" />;
+    
+    
       
     // Mind-Body Exercises  
     } else if (name.includes('yoga') || name.includes('stretch')) {
-      return <FaPray size={20} className="text-purple-400" />;
+      return <MdSelfImprovement size={20} className="text-purple-400" />;
     } else if (name.includes('pilates')) {
-      return <FaPray size={20} className="text-purple-300" />;
-    } else if (name.includes('gymnastics')) {
-      return <FaTrophy size={20} className="text-yellow-500" />;
-    }
+      return <MdSelfImprovement size={20} className="text-purple-300" />;
+    } 
     
     // Default icon for other activities
     return <Activity size={20} className="text-primary" />;
@@ -552,7 +558,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                   </>
                 ) : (
                   <>
-                    <Trash2 size={16} className="mr-2" />
+                    <X size={16} className="mr-2" />
                     <span>Delete</span>
                   </>
                 )}
@@ -598,7 +604,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                       title="Delete activity"
                       aria-label="Delete activity"
                     >
-                      <Trash2 size={16} />
+                      <X size={16} />
                     </button>
                     <span className="text-sm text-gray-400">{log.duration} minutes</span>
                   </div>
