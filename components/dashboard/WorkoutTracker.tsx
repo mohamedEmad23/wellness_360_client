@@ -29,6 +29,32 @@ import {
   X,
   AlertTriangle
 } from 'lucide-react'
+import { 
+  FaRunning, 
+  FaWalking, 
+  FaBiking, 
+  FaSwimmer, 
+  FaDumbbell, 
+  FaFire, 
+  FaFutbol, 
+  FaBasketballBall, 
+  FaVolleyballBall, 
+  FaHockeyPuck, 
+  FaTableTennis, 
+  FaHandRock, 
+  FaMountain, 
+  FaSnowflake, 
+  FaSkating, 
+  FaGolfBall, 
+  FaMusic, 
+  FaPray, 
+  FaTrophy,
+  FaShip,
+  FaWater,
+  FaFlag,
+  FaHeart,
+  FaTable
+} from 'react-icons/fa'
 
 interface Activity {
   id: string;
@@ -265,79 +291,75 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     
     // Running & Cardio
     if (name.includes('run') || name.includes('jog')) {
-      return <Wind size={20} className="text-blue-400" />;
+      return <FaRunning size={20} className="text-blue-400" />;
     } else if (name.includes('walk')) {
-      return <Footprints size={20} className="text-teal-400" />;
+      return <FaWalking size={20} className="text-teal-400" />;
     } else if (name.includes('jump') || name.includes('rope')) {
-      return <Wind size={20} className="text-blue-200" />;
+      return <FaRunning size={20} className="text-blue-200" />;
       
     // Cycling  
     } else if (name.includes('bike') || name.includes('cycl')) {
-      return <Bike size={20} className="text-green-400" />;
+      return <FaBiking size={20} className="text-green-400" />;
       
     // Water sports  
     } else if (name.includes('swim')) {
-      return <Droplet size={20} className="text-cyan-400" />;
+      return <FaSwimmer size={20} className="text-cyan-400" />;
     } else if (name.includes('surf') || name.includes('paddle')) {
-      return <Waves size={20} className="text-sky-400" />;
+      return <FaWater size={20} className="text-sky-400" />;
     } else if (name.includes('row') || name.includes('canoe') || name.includes('kayak')) {
-      return <Ship size={20} className="text-blue-500" />;
+      return <FaShip size={20} className="text-blue-500" />;
       
     // Gym & Strength  
     } else if (name.includes('weight') || name.includes('lift') || name.includes('gym')) {
-      return <Dumbbell size={20} className="text-yellow-400" />;
+      return <FaDumbbell size={20} className="text-yellow-400" />;
     } else if (name.includes('crossfit')) {
-      return <Flame size={20} className="text-red-500" />;
+      return <FaFire size={20} className="text-red-500" />;
       
     // Team Sports  
     } else if (name.includes('soccer') || name.includes('football')) {
-      return <Globe size={20} className="text-emerald-400" />;
+      return <FaFutbol size={20} className="text-emerald-400" />;
     } else if (name.includes('basketball')) {
-      return <CircleDashed size={20} className="text-orange-400" />;
+      return <FaBasketballBall size={20} className="text-orange-400" />;
     } else if (name.includes('volleyball')) {
-      return <CircleDashed size={20} className="text-yellow-300" />;
-    } else if (name.includes('rugby')) {
-      return <Globe size={20} className="text-amber-500" />;
+      return <FaVolleyballBall size={20} className="text-yellow-300" />;
     } else if (name.includes('hockey')) {
-      return <Sword size={20} className="text-blue-300" />;
+      return <FaHockeyPuck size={20} className="text-blue-300" />;
       
     // Racquet Sports
-    } else if (name.includes('tennis')) {
-      return <CircleDashed size={20} className="text-green-300" />;
-    } else if (name.includes('badminton')) {
-      return <Wind size={20} className="text-white" />;
+    } else if (name.includes('tennis') || name.includes('badminton')) {
+      return <FaTableTennis size={20} className="text-green-300" />;
     } else if (name.includes('table tennis') || name.includes('ping pong')) {
-      return <Table2 size={20} className="text-blue-200" />;
+      return <FaTableTennis size={20} className="text-blue-200" />;
       
     // Combat Sports  
     } else if (name.includes('box') || name.includes('fight')) {
-      return <HandIcon size={20} className="text-red-500" />;
+      return <FaHandRock size={20} className="text-red-500" />;
     } else if (name.includes('martial') || name.includes('karate') || name.includes('judo')) {
-      return <Sword size={20} className="text-gray-300" />;
+      return <FaHandRock size={20} className="text-gray-300" />;
       
     // Outdoor Activities  
     } else if (name.includes('hike') || name.includes('climb')) {
-      return <Mountain size={20} className="text-amber-400" />;
+      return <FaMountain size={20} className="text-amber-400" />;
     } else if (name.includes('ski') || name.includes('snowboard')) {
-      return <Snowflake size={20} className="text-indigo-400" />;
+      return <FaSnowflake size={20} className="text-indigo-400" />;
     } else if (name.includes('skate')) {
-      return <Wind size={20} className="text-purple-300" />;
+      return <FaSkating size={20} className="text-purple-300" />;
     } else if (name.includes('golf')) {
-      return <Flag size={20} className="text-green-500" />;
+      return <FaGolfBall size={20} className="text-green-500" />;
       
     // Dance & Rhythmic  
     } else if (name.includes('danc')) {
-      return <Music size={20} className="text-pink-400" />;
+      return <FaMusic size={20} className="text-pink-400" />;
     } else if (name.includes('aerobic')) {
-      return <Music size={20} className="text-orange-300" />;
+      return <FaHeart size={20} className="text-orange-300" />;
       
     // Mind-Body Exercises  
     } else if (name.includes('yoga') || name.includes('stretch')) {
-      return <Flower2 size={20} className="text-purple-400" />;
+      return <FaPray size={20} className="text-purple-400" />;
     } else if (name.includes('pilates')) {
-      return <Flower2 size={20} className="text-purple-300" />;
+      return <FaPray size={20} className="text-purple-300" />;
     } else if (name.includes('gymnastics')) {
-      return <Trophy size={20} className="text-yellow-500" />;
+      return <FaTrophy size={20} className="text-yellow-500" />;
     }
     
     // Default icon for other activities
@@ -367,7 +389,11 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                 </label>
                 <div className="relative" ref={dropdownRef}>
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
-                    <Activity size={18} />
+                    {formData.activityId ? (
+                      getActivityIcon(activities.find(a => a.id === formData.activityId)?.name || '')
+                    ) : (
+                      <Activity size={18} />
+                    )}
                   </div>
                   
                   {/* Custom dropdown trigger */}
