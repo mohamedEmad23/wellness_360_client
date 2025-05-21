@@ -630,7 +630,11 @@ export default function NutritionTracker() {
                           min="0.1"
                           step="0.1"
                           value={quantity}
-                          onChange={(e) => setQuantity(parseFloat(e.target.value) || 1)}
+                          onChange={(e) => {
+                            // Allow clearing the field or setting a new value
+                            const value = e.target.value === '' ? '' : parseFloat(e.target.value);
+                            setQuantity(value || 0);
+                          }}
                           className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                         />
                       </div>
@@ -698,7 +702,7 @@ export default function NutritionTracker() {
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-300">
-                  <span>{Math.round(log.calories)} kcal</span>
+                  <span>{Math.round(log.calories)} cal</span>
                   <span>{Math.round(log.protein)}g protein</span>
                   <span>{Math.round(log.carbs)}g carbs</span>
                   <span>{Math.round(log.fats)}g fats</span>

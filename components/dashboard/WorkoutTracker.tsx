@@ -506,7 +506,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3">
         <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
           <div className="text-primary text-xs sm:text-sm font-medium mb-1">Total Calories</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(workoutStats.totalCalories)} kcal</div>
+          <div className="text-base sm:text-xl font-semibold">{Math.round(workoutStats.totalCalories)} cal</div>
         </div>
         <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
           <div className="text-primary text-xs sm:text-sm font-medium mb-1">Activity Time</div>
@@ -677,7 +677,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                     </div>
                     <div className="flex items-center gap-1">
                       <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
-                      <span>{Math.round(log.caloriesBurned)} kcal</span>
+                      <span>{Math.round(log.caloriesBurned)} cal</span>
                     </div>
                   </div>
                 </div>
