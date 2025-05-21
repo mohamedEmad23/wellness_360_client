@@ -558,7 +558,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                   </>
                 ) : (
                   <>
-                    <X size={16} className="mr-2" />
+                    <Trash2 size={16} className="mr-2" />
                     <span>Delete</span>
                   </>
                 )}
@@ -604,7 +604,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                       title="Delete activity"
                       aria-label="Delete activity"
                     >
-                      <X size={16} />
+                      <Trash2 size={16} />
                     </button>
                     <span className="text-sm text-gray-400">{log.duration} minutes</span>
                   </div>
