@@ -345,12 +345,12 @@ export default function NutritionTracker() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="w-full mx-0">
       {error && (
         <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-3 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-red-200 text-xs sm:text-sm">{error}</p>
+            <p className="text-red-200 text-sm">{error}</p>
           </div>
         </div>
       )}
@@ -368,30 +368,29 @@ export default function NutritionTracker() {
       </div>
 
       {/* Date Navigation */}
-      <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button 
-            onClick={goToPreviousDay}
-            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Previous day"
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => setIsAddingEntry(prev => !prev)}
+            className={`${isAddingEntry ? 'bg-primary' : 'bg-white/10'} p-1.5 sm:p-2 rounded-lg transition-colors`}
+            aria-label={isAddingEntry ? 'Hide form' : 'Show form'}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </button>
           
           <div className="relative">
-            <button 
-              onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-              className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-white/10 rounded-lg transition-colors text-sm"
+            <button
+              onClick={() => setIsDatePickerOpen(prev => !prev)}
+              className="bg-white/5 hover:bg-white/10 rounded-lg px-2 sm:px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5"
             >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>
-                {viewMode === 'all' 
-                  ? 'All Time' 
-                  : viewMode === 'today' 
-                    ? 'Today' 
-                    : formatSelectedDate(selectedDate)}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5" />
+              {viewMode === 'today' ? (
+                <>Today</>
+              ) : viewMode === 'date' ? (
+                <>{formatSelectedDate(selectedDate)}</>
+              ) : (
+                <>All Logs</>
+              )}
+              <ChevronDown className="w-3 h-3" />
             </button>
             
             {isDatePickerOpen && (
@@ -399,7 +398,7 @@ export default function NutritionTracker() {
                 <div className="p-2 border-b border-white/10">
                   <button 
                     onClick={goToToday}
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                   >
                     Today
                   </button>
@@ -408,7 +407,7 @@ export default function NutritionTracker() {
                       setViewMode('all')
                       setIsDatePickerOpen(false)
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                   >
                     All Logs
                   </button>
@@ -421,7 +420,7 @@ export default function NutritionTracker() {
                       <button 
                         key={date}
                         onClick={() => handleDateSelect(date)}
-                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                       >
                         {new Date(date).toLocaleDateString('en-US', {
                           weekday: 'short',
@@ -446,28 +445,28 @@ export default function NutritionTracker() {
           </button>
         </div>
         
-        <div className="text-xs sm:text-sm text-gray-400">
+        <div className="text-xs text-gray-400">
           {filteredLogs.length} {filteredLogs.length === 1 ? 'entry' : 'entries'}
         </div>
       </div>
 
       {/* Nutrition Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-3">
-        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Calories</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(totals.calories)}</div>
+      <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-4 w-full">
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+          <div className="text-primary text-xs font-medium mb-1">Calories</div>
+          <div className="text-base font-semibold">{Math.round(totals.calories)}</div>
         </div>
-        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Protein</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(totals.protein)}g</div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+          <div className="text-blue-400 text-xs font-medium mb-1">Protein</div>
+          <div className="text-base font-semibold">{Math.round(totals.protein)}g</div>
         </div>
-        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Carbs</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(totals.carbs)}g</div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+          <div className="text-green-400 text-xs font-medium mb-1">Carbs</div>
+          <div className="text-base font-semibold">{Math.round(totals.carbs)}g</div>
         </div>
-        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Fats</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(totals.fats)}g</div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+          <div className="text-yellow-400 text-xs font-medium mb-1">Fats</div>
+          <div className="text-base font-semibold">{Math.round(totals.fats)}g</div>
         </div>
       </div>
 
@@ -478,10 +477,10 @@ export default function NutritionTracker() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4"
+            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4 w-full mx-0"
           >
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base sm:text-lg font-medium">Log Food</h3>
+              <h3 className="text-base font-medium">Log Food</h3>
               <button
                 onClick={handleCancel}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -512,7 +511,7 @@ export default function NutritionTracker() {
             {aiMode ? (
               <div className="space-y-3">
                 <div>
-                  <label htmlFor="foodDescription" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="foodDescription" className="block text-xs font-medium text-gray-300 mb-1">
                     Food Description
                   </label>
                   <textarea
@@ -532,7 +531,7 @@ export default function NutritionTracker() {
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label htmlFor="searchQuery" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="searchQuery" className="block text-xs font-medium text-gray-300 mb-1">
                     Search Food
                   </label>
                   <div className="relative">
@@ -548,7 +547,7 @@ export default function NutritionTracker() {
                     <button
                       onClick={handleSearch}
                       disabled={isSearching || !searchQuery.trim()}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary hover:bg-primary/90 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm disabled:opacity-50 disabled:pointer-events-none"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary hover:bg-primary/90 text-white px-2 sm:px-3 py-1 rounded text-xs disabled:opacity-50 disabled:pointer-events-none"
                     >
                       {isSearching ? 'Searching...' : 'Search'}
                     </button>
@@ -577,7 +576,7 @@ export default function NutritionTracker() {
                 {selectedFood && (
                   <div className="space-y-3 pt-1">
                     <div>
-                      <label htmlFor="title" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                      <label htmlFor="title" className="block text-xs font-medium text-gray-300 mb-1">
                         Title/Label
                       </label>
                       <input
@@ -592,7 +591,7 @@ export default function NutritionTracker() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
                           Measure
                         </label>
                         <div className="relative">
@@ -621,7 +620,7 @@ export default function NutritionTracker() {
                       </div>
                       
                       <div>
-                        <label htmlFor="quantity" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                        <label htmlFor="quantity" className="block text-xs font-medium text-gray-300 mb-1">
                           Quantity
                         </label>
                         <input
@@ -668,26 +667,26 @@ export default function NutritionTracker() {
 
       {/* Food Log List */}
       {isLoading ? (
-        <div className="text-center py-6">
+        <div className="text-center py-8 w-full">
           <div className="animate-pulse text-sm">Loading food logs...</div>
         </div>
       ) : filteredLogs.length === 0 ? (
-        <div className="bg-black/30 border border-white/5 rounded-lg p-6 text-center">
+        <div className="bg-black/30 border border-white/5 rounded-xl p-8 text-center w-full">
           <Utensils className="w-8 h-8 mx-auto mb-3 text-gray-400" />
-          <h3 className="text-base sm:text-lg font-medium mb-2">No food logs {viewMode !== 'all' ? 'for this day' : ''}</h3>
-          <p className="text-gray-400 max-w-md mx-auto mb-4 text-sm">
-            Start tracking your nutrition by logging your meals and snacks.
+          <h3 className="text-base font-medium mb-2">No food entries {viewMode !== 'all' ? 'for this day' : ''}</h3>
+          <p className="text-gray-400 mb-4 max-w-md mx-auto text-sm">
+            Start logging your meals to track your nutrition intake.
           </p>
           <button
             onClick={() => setIsAddingEntry(true)}
-            className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 text-sm transition-colors"
+            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors text-sm"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Log Food</span>
+            <Plus className="w-4 h-4" />
+            <span>Add Food Entry</span>
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 w-full">
           {filteredLogs.map((log) => (
             <div
               key={log._id}
@@ -695,13 +694,13 @@ export default function NutritionTracker() {
             >
               <div className="flex-grow">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="font-medium text-sm sm:text-base">{log.title}</span>
+                  <span className="font-medium text-sm">{log.title}</span>
                   <span className="text-xs text-gray-400 flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     {formatDate(log.date)}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-300">
+                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-300">
                   <span>{Math.round(log.calories)} cal</span>
                   <span>{Math.round(log.protein)}g protein</span>
                   <span>{Math.round(log.carbs)}g carbs</span>
@@ -730,8 +729,8 @@ export default function NutritionTracker() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-black/90 border border-white/10 rounded-xl p-4 sm:p-6 max-w-md w-full mx-4"
             >
-              <h3 className="text-base sm:text-lg font-medium mb-2">Delete Food Log</h3>
-              <p className="text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6">
+              <h3 className="text-base font-medium mb-2">Delete Food Log</h3>
+              <p className="text-sm text-gray-300 mb-4 sm:mb-6">
                 Are you sure you want to delete this food log? This action cannot be undone.
               </p>
               

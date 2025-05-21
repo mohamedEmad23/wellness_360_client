@@ -323,14 +323,14 @@ export default function SleepTracker() {
   // Calculate average sleep metrics for the filtered entries
   const calculateSleepStats = () => {
     if (filteredEntries.length === 0) {
-      return { totalHours: 0, avgDuration: 0, avgRating: 0 }
+      return { totalDuration: 0, avgDuration: 0, avgRating: 0 }
     }
     
     const totalDuration = filteredEntries.reduce((sum, entry) => sum + entry.duration, 0)
     const totalRating = filteredEntries.reduce((sum, entry) => sum + entry.rating, 0)
     
     return {
-      totalHours: totalDuration,
+      totalDuration,
       avgDuration: totalDuration / filteredEntries.length,
       avgRating: totalRating / filteredEntries.length
     }
@@ -339,61 +339,50 @@ export default function SleepTracker() {
   const sleepStats = calculateSleepStats()
 
   return (
-    <div className="space-y-4">
+    <div className="w-full mx-0">
+      {/* Error Alert */}
       {error && (
         <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-3 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-red-200 text-xs sm:text-sm">{error}</p>
-          </div>
+          <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-red-100 text-sm">{error}</p>
         </div>
       )}
-
-      {/* Header with Add Sleep Entry Button */}
-      <div className="flex justify-end">
-        <button 
-          onClick={() => setIsAddingEntry(true)}
-          className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm transition-colors"
-          disabled={isAddingEntry}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Log Sleep</span>
-        </button>
-      </div>
-
+      
       {/* Date Navigation */}
-      <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
-        <div className="flex items-center gap-1 sm:gap-2">
-          <button 
-            onClick={goToPreviousDay}
-            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Previous day"
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => {
+              setIsAddingEntry(prev => !prev);
+              if (!isAddingEntry) setEditingEntry(null);
+            }}
+            className={`${isAddingEntry ? 'bg-primary' : 'bg-white/10'} p-1.5 sm:p-2 rounded-lg transition-colors`}
+            aria-label={isAddingEntry ? 'Hide form' : 'Show form'}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </button>
           
           <div className="relative">
-            <button 
-              onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-              className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-white/10 rounded-lg transition-colors text-sm"
+            <button
+              onClick={() => setIsDatePickerOpen(prev => !prev)}
+              className="bg-white/5 hover:bg-white/10 rounded-lg px-2 sm:px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5"
             >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>
-                {viewMode === 'all' 
-                  ? 'All Time' 
-                  : viewMode === 'today' 
-                    ? 'Today' 
-                    : formatSelectedDate(selectedDate)}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5" />
+              {viewMode === 'today' ? (
+                <>Today</>
+              ) : viewMode === 'date' ? (
+                <>{formatSelectedDate(selectedDate)}</>
+              ) : (
+                <>All Logs</>
+              )}
+              <ChevronDown className="w-3 h-3" />
             </button>
             
             {isDatePickerOpen && (
-              <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/10 rounded-lg shadow-lg w-56 z-10">
+              <div className="absolute z-10 mt-1 bg-black/95 border border-white/10 rounded-lg shadow-lg min-w-[180px] w-full">
                 <div className="p-2 border-b border-white/10">
                   <button 
                     onClick={goToToday}
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                   >
                     Today
                   </button>
@@ -402,7 +391,7 @@ export default function SleepTracker() {
                       setViewMode('all')
                       setIsDatePickerOpen(false)
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                   >
                     All Logs
                   </button>
@@ -415,7 +404,7 @@ export default function SleepTracker() {
                       <button 
                         key={date}
                         onClick={() => handleDateSelect(date)}
-                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                       >
                         {new Date(date).toLocaleDateString('en-US', {
                           weekday: 'short',
@@ -432,6 +421,14 @@ export default function SleepTracker() {
           </div>
           
           <button 
+            onClick={goToPreviousDay}
+            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Previous day"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          <button 
             onClick={goToNextDay}
             className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
             aria-label="Next day"
@@ -440,43 +437,30 @@ export default function SleepTracker() {
           </button>
         </div>
         
-        <div className="text-xs sm:text-sm text-gray-400">
+        <div className="text-xs text-gray-400">
           {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
         </div>
       </div>
-
+      
       {/* Sleep Stats Cards */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3">
-        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Total Sleep</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(sleepStats.totalHours * 10) / 10} hours</div>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 w-full">
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+          <div className="text-indigo-400 text-xs font-medium mb-1">Avg. Duration</div>
+          <div className="text-base font-semibold">{sleepStats.avgDuration.toFixed(1)} hrs</div>
         </div>
-        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Average Duration</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(sleepStats.avgDuration * 10) / 10} hours</div>
-        </div>
-        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Sleep Quality</div>
-          <div className="flex items-center">
-            <span className="text-base sm:text-xl font-semibold mr-2">{Math.round(sleepStats.avgRating * 10) / 10}</span>
-            <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                    star <= sleepStats.avgRating
-                      ? 'text-yellow-400 fill-yellow-400'
-                      : star - 0.5 <= sleepStats.avgRating
-                      ? 'text-yellow-400 fill-yellow-400/50'
-                      : 'text-gray-600'
-                  }`}
-                />
-              ))}
-            </div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+          <div className="text-purple-400 text-xs font-medium mb-1">Avg. Quality</div>
+          <div className="text-base font-semibold flex items-center">
+            {sleepStats.avgRating.toFixed(1)}
+            <Star className="w-4 h-4 text-yellow-500 ml-1" />
           </div>
         </div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+          <div className="text-blue-400 text-xs font-medium mb-1">Total Sleep</div>
+          <div className="text-base font-semibold">{sleepStats.totalDuration.toFixed(1)} hrs</div>
+        </div>
       </div>
-
+      
       {/* Sleep Entry Form */}
       <AnimatePresence>
         {isAddingEntry && (
@@ -484,10 +468,10 @@ export default function SleepTracker() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4"
+            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4 w-full mx-0"
           >
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base sm:text-lg font-medium">{editingEntry ? 'Edit Sleep Entry' : 'Add Sleep Entry'}</h3>
+              <h3 className="text-base font-medium">{editingEntry ? 'Edit Sleep Entry' : 'Add Sleep Entry'}</h3>
               <button
                 onClick={handleCancel}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -499,7 +483,7 @@ export default function SleepTracker() {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label htmlFor="date" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="date" className="block text-xs font-medium text-gray-300 mb-1">
                     Date
                   </label>
                   <input
@@ -512,7 +496,7 @@ export default function SleepTracker() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="time" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="time" className="block text-xs font-medium text-gray-300 mb-1">
                     Start Time
                   </label>
                   <input
@@ -528,7 +512,7 @@ export default function SleepTracker() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label htmlFor="duration" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  <label htmlFor="duration" className="block text-xs font-medium text-gray-300 mb-1">
                     Duration (hours)
                   </label>
                   <input
@@ -543,7 +527,7 @@ export default function SleepTracker() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
                     Sleep Quality
                   </label>
                   <div className="relative">
@@ -563,7 +547,7 @@ export default function SleepTracker() {
                             type="button"
                             key={option.value}
                             onClick={() => handleQualitySelect(option)}
-                            className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 transition-colors"
+                            className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 transition-colors text-sm"
                           >
                             <div className="flex justify-between items-center">
                               <span>{option.label}</span>
@@ -583,7 +567,7 @@ export default function SleepTracker() {
               </div>
 
               <div>
-                <label htmlFor="notes" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="notes" className="block text-xs font-medium text-gray-300 mb-1">
                   Notes (optional)
                 </label>
                 <textarea
@@ -618,29 +602,32 @@ export default function SleepTracker() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Sleep Entries List */}
+      
+      {/* Sleep Entries */}
       {isLoading ? (
-        <div className="text-center py-6">
-          <div className="animate-pulse text-sm">Loading sleep logs...</div>
+        <div className="text-center py-8 w-full">
+          <div className="animate-pulse text-sm">Loading sleep records...</div>
         </div>
       ) : filteredEntries.length === 0 ? (
-        <div className="bg-black/30 border border-white/5 rounded-lg p-6 text-center">
+        <div className="bg-black/30 border border-white/5 rounded-xl p-8 text-center w-full">
           <Moon className="w-8 h-8 mx-auto mb-3 text-gray-400" />
-          <h3 className="text-base sm:text-lg font-medium mb-2">No sleep logs {viewMode !== 'all' ? 'for this day' : ''}</h3>
-          <p className="text-gray-400 max-w-md mx-auto mb-4 text-sm">
-            Start tracking your sleep patterns to improve your rest quality.
+          <h3 className="text-base font-medium mb-2">No sleep entries {viewMode !== 'all' ? 'for this day' : ''}</h3>
+          <p className="text-gray-400 mb-4 max-w-md mx-auto text-sm">
+            Track your sleep to improve your rest quality and overall well-being.
           </p>
           <button
-            onClick={() => setIsAddingEntry(true)}
-            className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 text-sm transition-colors"
+            onClick={() => {
+              setIsAddingEntry(true);
+              setEditingEntry(null);
+            }}
+            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors text-sm"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Log Sleep</span>
+            <Plus className="w-4 h-4" />
+            <span>Add Sleep Entry</span>
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 w-full">
           {filteredEntries.map((entry) => (
             <div
               key={entry._id}
@@ -649,15 +636,15 @@ export default function SleepTracker() {
               <div className="flex justify-between items-start mb-1">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="text-sm sm:text-base font-medium">{entry.duration} hours</div>
+                    <div className="text-sm font-medium">{entry.duration} hours</div>
                     <div className="flex">
                       {[...Array(entry.rating)].map((_, i) => (
                         <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
                       ))}
                     </div>
                   </div>
-                  <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1 sm:gap-2 mt-1">
-                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <div className="text-xs text-gray-400 flex items-center gap-1 sm:gap-2 mt-1">
+                    <Calendar className="w-3 h-3" />
                     <span>{formatDateTime(entry.startTime)}</span>
                   </div>
                 </div>
@@ -683,7 +670,7 @@ export default function SleepTracker() {
                 </div>
               </div>
               {entry.notes && (
-                <div className="mt-2 text-xs sm:text-sm text-gray-300 bg-white/5 p-2 sm:p-3 rounded-lg">
+                <div className="mt-2 text-xs text-gray-300 bg-white/5 p-2 sm:p-3 rounded-lg">
                   {entry.notes}
                 </div>
               )}
@@ -691,7 +678,7 @@ export default function SleepTracker() {
           ))}
         </div>
       )}
-
+      
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deletingEntry && (
@@ -702,8 +689,8 @@ export default function SleepTracker() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-black/90 border border-white/10 rounded-xl p-4 sm:p-6 max-w-md w-full mx-4"
             >
-              <h3 className="text-base sm:text-lg font-medium mb-2">Delete Sleep Entry</h3>
-              <p className="text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6">
+              <h3 className="text-base font-medium mb-2">Delete Sleep Entry</h3>
+              <p className="text-sm text-gray-300 mb-4 sm:mb-6">
                 Are you sure you want to delete this sleep entry? This action cannot be undone.
               </p>
               

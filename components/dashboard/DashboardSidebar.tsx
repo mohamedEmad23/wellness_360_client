@@ -48,10 +48,7 @@ export default function DashboardSidebar({
   const mainLinks = [
     { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
     { path: '/dashboard/activity', label: 'Activity Tracking', icon: <Activity className="w-5 h-5" /> },
-    { path: '/dashboard/calendar', label: 'Calendar', icon: <Calendar className="w-5 h-5" /> },
-    { path: '/dashboard/recommendations', label: 'AI Recommendations', icon: <Lightbulb className="w-5 h-5" /> },
-    { path: '/dashboard/analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5" /> },
-    { path: '/dashboard/todo', label: 'Todo List', icon: <CheckSquare className="w-5 h-5" /> },
+    { path: '/dashboard/trainer', label: 'AI Trainer', icon: <Lightbulb className="w-5 h-5" /> }
   ]
 
   const accountLinks = [

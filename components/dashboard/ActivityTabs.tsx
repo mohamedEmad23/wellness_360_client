@@ -20,12 +20,12 @@ export default function ActivityTabs({ showAddEntry, setShowAddEntry }: Activity
   const setFormVisible = setShowAddEntry || setLocalShowAddEntry;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full mx-0">
       {/* Tab Navigation */}
       <div className="flex overflow-x-auto bg-black/30 p-1 rounded-xl mb-4 w-full no-scrollbar">
         <button
           onClick={() => setActiveTab('workout')}
-          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'workout'
               ? 'bg-primary text-white'
               : 'text-gray-300 hover:text-white hover:bg-white/10'
@@ -37,7 +37,7 @@ export default function ActivityTabs({ showAddEntry, setShowAddEntry }: Activity
         
         <button
           onClick={() => setActiveTab('nutrition')}
-          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'nutrition'
               ? 'bg-primary text-white'
               : 'text-gray-300 hover:text-white hover:bg-white/10'
@@ -49,7 +49,7 @@ export default function ActivityTabs({ showAddEntry, setShowAddEntry }: Activity
         
         <button
           onClick={() => setActiveTab('sleep')}
-          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'sleep'
               ? 'bg-primary text-white'
               : 'text-gray-300 hover:text-white hover:bg-white/10'
@@ -61,21 +61,21 @@ export default function ActivityTabs({ showAddEntry, setShowAddEntry }: Activity
       </div>
 
       {/* Content Area */}
-      <div className="bg-black/20 border border-white/5 rounded-xl p-4 md:p-6">
+      <div className="bg-black/20 border border-white/5 rounded-xl p-4 md:p-6 w-full mx-0">
         {activeTab === 'workout' && (
-          <div className="animate-in fade-in duration-300">
+          <div className="animate-in fade-in duration-300 w-full">
             <WorkoutTracker showForm={formVisible} setShowForm={setFormVisible} />
           </div>
         )}
         
         {activeTab === 'nutrition' && (
-          <div className="animate-in fade-in duration-300">
+          <div className="animate-in fade-in duration-300 w-full">
             <NutritionTracker />
           </div>
         )}
         
         {activeTab === 'sleep' && (
-          <div className="animate-in fade-in duration-300">
+          <div className="animate-in fade-in duration-300 w-full">
             <SleepTracker />
           </div>
         )}

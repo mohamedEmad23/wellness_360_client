@@ -33,7 +33,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  Clock
+  Clock,
+  Info,
+  RefreshCw
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -395,13 +397,49 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     return selectedActivity ? selectedActivity.name : 'Select an activity'
   }
 
+  // Use effect to generate a random workout when form is shown
+  useEffect(() => {
+    if (showForm && activities.length > 0) {
+      generateRandomWorkout()
+    }
+  }, [showForm, activities.length])
+
+  // Generate a random workout
+  const generateRandomWorkout = () => {
+    if (activities.length === 0) {
+      return
+    }
+    
+    // Select a random activity
+    const randomActivity = activities[Math.floor(Math.random() * activities.length)]
+    
+    // Generate a random duration between 15-60 minutes
+    const duration = Math.floor(Math.random() * 45) + 15
+    
+    // Generate a title
+    const titles = [
+      `${randomActivity.name} Workout`,
+      `Quick ${randomActivity.name}`,
+      `${randomActivity.name} Session`,
+      `Daily ${randomActivity.name}`
+    ]
+    const title = titles[Math.floor(Math.random() * titles.length)]
+    
+    // Set the form data
+    setFormData({
+      activityId: randomActivity.id,
+      title: title,
+      duration: duration.toString()
+    })
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="w-full mx-0">
       {error && (
         <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-3 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-red-200 text-xs sm:text-sm">{error}</p>
+            <p className="text-red-200 text-sm">{error}</p>
           </div>
         </div>
       )}
@@ -450,7 +488,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                 <div className="p-2 border-b border-white/10">
                   <button 
                     onClick={goToToday}
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                   >
                     Today
                   </button>
@@ -459,7 +497,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                       setViewMode('all')
                       setIsDatePickerOpen(false)
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                   >
                     All Logs
                   </button>
@@ -472,7 +510,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                       <button 
                         key={date}
                         onClick={() => handleDateSelect(date)}
-                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors text-sm"
                       >
                         {new Date(date).toLocaleDateString('en-US', {
                           weekday: 'short',
@@ -503,18 +541,18 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       </div>
                   
       {/* Workout Stats Cards */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3 w-full">
         <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Total Calories</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(workoutStats.totalCalories)} cal</div>
+          <div className="text-primary text-xs font-medium mb-1">Total Calories</div>
+          <div className="text-base font-semibold">{Math.round(workoutStats.totalCalories)} cal</div>
         </div>
         <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Activity Time</div>
-          <div className="text-base sm:text-xl font-semibold">{Math.round(workoutStats.totalMinutes)} min</div>
+          <div className="text-primary text-xs font-medium mb-1">Activity Time</div>
+          <div className="text-base font-semibold">{Math.round(workoutStats.totalMinutes)} min</div>
         </div>
         <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
-          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Workouts</div>
-          <div className="text-base sm:text-xl font-semibold">{workoutStats.workouts}</div>
+          <div className="text-primary text-xs font-medium mb-1">Workouts</div>
+          <div className="text-base font-semibold">{workoutStats.workouts}</div>
         </div>
       </div>
 
@@ -525,10 +563,10 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4"
+            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4 w-full mx-0"
           >
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base sm:text-lg font-medium">Log Workout</h3>
+              <h3 className="text-base font-medium">Log Workout</h3>
               <button
                 onClick={() => setShowForm(false)}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -537,9 +575,9 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3 w-full">
               <div className="relative" ref={dropdownRef}>
-                <label htmlFor="activity" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="activity" className="block text-xs font-medium text-gray-300 mb-1">
                   Activity
                 </label>
                 <button
@@ -570,7 +608,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                         key={activity.id}
                         type="button"
                         onClick={() => selectActivity(activity.id, activity.name)}
-                        className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 transition-colors"
+                        className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 transition-colors text-sm"
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-primary">{getActivityIcon(activity.name)}</span>
@@ -583,7 +621,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
               </div>
 
               <div>
-                <label htmlFor="title" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="title" className="block text-xs font-medium text-gray-300 mb-1">
                   Title/Note
                 </label>
                 <input
@@ -592,13 +630,13 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  placeholder="Enter a title for this workout"
+                  placeholder="Workout title"
                   className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
               </div>
 
               <div>
-                <label htmlFor="duration" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                <label htmlFor="duration" className="block text-xs font-medium text-gray-300 mb-1">
                   Duration (minutes)
                 </label>
                 <input
@@ -611,22 +649,39 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                   className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
               </div>
+              
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 text-xs text-blue-200">
+                <p className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-blue-400" />
+                  <span>A sample workout has been generated for you. You can adjust it as needed.</span>
+                </p>
+              </div>
 
-              <div className="mt-4 flex justify-end gap-2 sm:gap-3">
+              <div className="mt-4 flex justify-between sm:justify-end gap-2 sm:gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-3 py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm"
+                  onClick={generateRandomWorkout}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm flex items-center gap-1.5"
                 >
-                  Cancel
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Generate</span>
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !formData.activityId || !formData.duration}
-                  className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none text-sm"
-                >
-                  {isSubmitting ? 'Saving...' : 'Save'}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="px-3 py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !formData.activityId || !formData.duration}
+                    className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none text-sm"
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
               </div>
             </form>
           </motion.div>
@@ -635,13 +690,13 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
 
       {/* Workout Logs List */}
       {isLoadingLogs ? (
-        <div className="text-center py-6">
+        <div className="text-center py-6 w-full">
           <div className="animate-pulse text-sm">Loading workout logs...</div>
         </div>
       ) : filteredLogs.length === 0 ? (
-        <div className="bg-black/30 border border-white/5 rounded-lg p-6 text-center">
+        <div className="bg-black/30 border border-white/5 rounded-lg p-6 text-center w-full">
           <Activity className="w-8 h-8 mx-auto mb-3 text-gray-400" />
-          <h3 className="text-base sm:text-lg font-medium mb-2">No workout logs {viewMode !== 'all' ? 'for this day' : ''}</h3>
+          <h3 className="text-base font-medium mb-2">No workout logs {viewMode !== 'all' ? 'for this day' : ''}</h3>
           <p className="text-gray-400 max-w-md mx-auto mb-4 text-sm">
             Start tracking your workouts to monitor your fitness progress.
           </p>
@@ -654,7 +709,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 w-full">
           {filteredLogs.map((log) => (
             <div
               key={log._id}
@@ -665,18 +720,18 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                   {getActivityIcon(log.activity)}
                 </div>
                 <div>
-                  <div className="font-medium text-sm sm:text-base">{log.title || log.activity}</div>
-                  <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-300">
+                  <div className="font-medium text-sm">{log.title || log.activity}</div>
+                  <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-300">
                     <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                      <Calendar className="w-3 h-3 text-gray-400" />
                       <span>{formatDate(log.date)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                      <Clock className="w-3 h-3 text-gray-400" />
                       <span>{log.duration} min</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                      <Flame className="w-3 h-3 text-gray-400" />
                       <span>{Math.round(log.caloriesBurned)} cal</span>
                     </div>
                   </div>
@@ -705,24 +760,24 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
               className="bg-black/90 border border-white/10 rounded-xl p-6 max-w-md w-full mx-4"
             >
               <h3 className="text-lg font-medium mb-2">Delete Workout</h3>
-            <p className="text-gray-300 mb-6">
+              <p className="text-gray-300 mb-6 text-sm">
                 Are you sure you want to delete "{deleteConfirmation.title}"? This action cannot be undone.
-            </p>
+              </p>
             
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={cancelDelete}
-                  className="px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteActivity(deleteConfirmation.activityId)}
-                disabled={isDeleting}
-                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={cancelDelete}
+                  className="px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteActivity(deleteConfirmation.activityId)}
+                  disabled={isDeleting}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
                 >
                   {isDeleting ? 'Deleting...' : 'Delete'}
-                    </button>
+                </button>
               </div>
             </motion.div>
           </div>

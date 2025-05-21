@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    console.log(body);
     const response = await fetch(`${API_BASE}/food-log/log-by-id`, {
       method: 'POST',
       headers: {
@@ -26,7 +25,6 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(body),
     });
-    console.log(response.ok);
 
     // Get response data based on status
     let responseData;
@@ -37,8 +35,6 @@ export async function POST(request: NextRequest) {
       responseData = { error: 'Invalid response from server' };
     }
     
-    console.log(responseData);
-
     if (!response.ok) {
       return NextResponse.json(
         responseData,
@@ -48,8 +44,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(responseData);
   } catch (error) {
-    console.log(error);
-    return NextResponse.json(
+      return NextResponse.json(
       { error: 'Failed to log food item' },
       { status: 500 }
     );

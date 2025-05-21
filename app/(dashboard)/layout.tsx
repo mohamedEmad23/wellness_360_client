@@ -39,14 +39,14 @@ export default function DashboardLayout({
   const getPageTitle = () => {
     if (pathname === '/dashboard') return 'Dashboard'
     if (pathname === '/dashboard/activity') return 'Activity Tracking'
-    if (pathname === '/dashboard/calendar') return 'Calendar'
-    if (pathname === '/dashboard/recommendations') return 'AI Recommendations'
-    if (pathname === '/dashboard/analytics') return 'Analytics'
-    if (pathname === '/dashboard/todo') return 'Todo List'
+    if (pathname === '/dashboard/trainer') return 'AI Trainer'
     if (pathname === '/dashboard/profile') return 'Profile'
     if (pathname === '/dashboard/settings') return 'Settings'
     return 'Dashboard'
   }
+
+  // Check if current page should have full width
+  const isFullWidthPage = pathname === '/dashboard/trainer' || pathname === '/dashboard/activity';
 
   if (isLoading) {
     return (
@@ -76,7 +76,7 @@ export default function DashboardLayout({
         
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-black/50 p-6">
-          <div className="container mx-auto">
+          <div className={isFullWidthPage ? "w-full" : "container mx-auto"}>
             {children}
           </div>
         </main>
