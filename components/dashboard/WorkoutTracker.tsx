@@ -169,6 +169,13 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check for empty fields
+    if (!formData.activityId || !formData.title || !formData.duration) {
+      setError('Please fill in all required fields')
+      return
+    }
+    
     setIsSubmitting(true)
     setError(null)
     
@@ -207,7 +214,7 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       
     } catch (error) {
       console.error('Error submitting activity:', error)
-      setError('Failed to save activity. Please try again.')
+      setError('Unable to save your activity. Please try again later.')
     } finally {
       setIsSubmitting(false)
     }
@@ -376,12 +383,13 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
           </div>
 
           {error && (
-            <div className="mb-6 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
-              {error}
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 flex items-center">
+              <AlertTriangle size={18} className="mr-2 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="space-y-6">
               <div>
                 <label htmlFor="activityType" className="block text-sm font-medium mb-2 text-gray-200">
@@ -455,7 +463,8 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                 </div>
                 
                 {error && activities.length === 0 && !isLoading && (
-                  <p className="mt-2 text-xs text-red-400">
+                  <p className="mt-2 text-sm text-red-300 flex items-center">
+                    <AlertTriangle size={14} className="mr-1.5 flex-shrink-0" />
                     {error}
                   </p>
                 )}
@@ -487,8 +496,15 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
                   name="duration"
                   type="number"
                   min="1"
+                  max="1440"
+                  step="1"
                   value={formData.duration}
                   onChange={handleChange}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   required
                   disabled={isSubmitting}
                   className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
@@ -616,6 +632,26 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
           <p className="text-gray-300">You haven't logged any activities yet.</p>
         )}
       </div>
+
+      <style jsx global>{`
+        input:invalid,
+        select:invalid {
+          box-shadow: none;
+        }
+        input:invalid:focus,
+        select:invalid:focus {
+          box-shadow: none;
+        }
+        ::-webkit-validation-bubble {
+          display: none;
+        }
+        ::-webkit-validation-bubble-message {
+          display: none;
+        }
+        ::-webkit-validation-bubble-arrow {
+          display: none;
+        }
+      `}</style>
     </div>
   )
 } 
