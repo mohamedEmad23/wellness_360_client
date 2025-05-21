@@ -36,7 +36,6 @@ export async function GET(req: NextRequest) {
 
     // Parse the response body as JSON
     const data = await response.json();
-    console.log(`${type === 'activities' ? 'Activities' : 'User activity logs'} fetched successfully`);
 
     // Return the data with proper status
     return NextResponse.json(data, { status: 200 });
