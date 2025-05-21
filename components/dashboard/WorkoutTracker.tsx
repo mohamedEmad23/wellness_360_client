@@ -27,8 +27,15 @@ import {
   Table2,
   Trash2,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Plus,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Clock
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Activity {
   id: string;
@@ -50,9 +57,12 @@ interface WorkoutTrackerProps {
   setShowForm: Dispatch<SetStateAction<boolean>>;
 }
 
+type ViewMode = 'today' | 'all' | 'date'
+
 export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTrackerProps) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [userActivityLogs, setUserActivityLogs] = useState<ActivityLog[]>([])
+  const [filteredLogs, setFilteredLogs] = useState<ActivityLog[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingLogs, setIsLoadingLogs] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -70,6 +80,9 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     activityId: '',
     title: ''
   })
+  const [viewMode, setViewMode] = useState<ViewMode>('today')
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
 
   // Add useEffect to fetch activities and user logs on mount
   useEffect(() => {
@@ -88,6 +101,30 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Function to filter logs based on date and view mode
+  const filterLogs = (logs: ActivityLog[], mode: ViewMode, date: Date) => {
+    if (mode === 'all') {
+      setFilteredLogs(logs)
+      return
+    }
+
+    // Format the selected date to compare with log dates (YYYY-MM-DD format)
+    const selectedDateStr = date.toISOString().split('T')[0]
+    
+    // Filter logs for the selected date
+    const filtered = logs.filter(log => {
+      const logDate = new Date(log.date).toISOString().split('T')[0]
+      return logDate === selectedDateStr
+    })
+    
+    setFilteredLogs(filtered)
+  }
+
+  useEffect(() => {
+    // Update filtered logs when view mode or selected date changes
+    filterLogs(userActivityLogs, viewMode, selectedDate)
+  }, [viewMode, selectedDate, userActivityLogs])
 
   const fetchActivities = async () => {
     setIsLoading(true)
@@ -122,6 +159,8 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       
       const data = await response.json()
       setUserActivityLogs(data)
+      // Filter logs based on current view mode
+      filterLogs(data, viewMode, selectedDate)
     } catch (error) {
       setError('Could not load activities. Please try again.')
     } finally {
@@ -198,44 +237,41 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     }
   }
 
-  const handleActivitySelect = (activityId: string, activityName: string) => {
+  const selectActivity = (id: string, name: string) => {
     setFormData(prev => ({
       ...prev,
-      activityId
+      activityId: id
     }))
     setIsDropdownOpen(false)
   }
 
-  // New function to handle activity deletion
   const deleteActivity = async (id: string) => {
     setIsDeleting(true)
+    setError(null)
     
     try {
       const response = await fetch(`/api/activity?id=${id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Delete error:', response.status, errorText)
-        throw new Error('Failed to delete activity')
+        throw new Error(`Failed to delete activity: ${response.status}`)
       }
       
-      // After successful deletion, refresh the logs
+      // Refresh logs after deletion
       fetchUserActivityLogs()
       
-      // Show success message or notification here if needed
     } catch (error) {
-      console.error('Error deleting activity:', error)
       setError('Failed to delete activity. Please try again.')
     } finally {
       setIsDeleting(false)
-      // Close confirmation modal
-      setDeleteConfirmation({visible: false, activityId: '', title: ''})
+      setDeleteConfirmation({ visible: false, activityId: '', title: '' })
     }
   }
   
-  // Function to open delete confirmation
   const confirmDelete = (activityId: string, title: string) => {
     setDeleteConfirmation({
       visible: true,
@@ -244,7 +280,6 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     })
   }
   
-  // Function to cancel delete
   const cancelDelete = () => {
     setDeleteConfirmation({
       visible: false,
@@ -253,337 +288,446 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     })
   }
 
-  // Function to get the appropriate icon for an activity
-  const getActivityIcon = (activityName: string) => {
-    const name = activityName.toLowerCase();
-    
-    // Running & Cardio
-    if (name.includes('run') || name.includes('jog')) {
-      return <Wind size={20} className="text-blue-400" />;
-    } else if (name.includes('walk')) {
-      return <Footprints size={20} className="text-teal-400" />;
-    } else if (name.includes('jump') || name.includes('rope')) {
-      return <Wind size={20} className="text-blue-200" />;
-      
-    // Cycling  
-    } else if (name.includes('bike') || name.includes('cycl')) {
-      return <Bike size={20} className="text-green-400" />;
-      
-    // Water sports  
-    } else if (name.includes('swim')) {
-      return <Droplet size={20} className="text-cyan-400" />;
-    } else if (name.includes('surf') || name.includes('paddle')) {
-      return <Waves size={20} className="text-sky-400" />;
-    } else if (name.includes('row') || name.includes('canoe') || name.includes('kayak')) {
-      return <Ship size={20} className="text-blue-500" />;
-      
-    // Gym & Strength  
-    } else if (name.includes('weight') || name.includes('lift') || name.includes('gym')) {
-      return <Dumbbell size={20} className="text-yellow-400" />;
-    } else if (name.includes('crossfit')) {
-      return <Flame size={20} className="text-red-500" />;
-      
-    // Team Sports  
-    } else if (name.includes('soccer') || name.includes('football')) {
-      return <Globe size={20} className="text-emerald-400" />;
-    } else if (name.includes('basketball')) {
-      return <CircleDashed size={20} className="text-orange-400" />;
-    } else if (name.includes('volleyball')) {
-      return <CircleDashed size={20} className="text-yellow-300" />;
-    } else if (name.includes('rugby')) {
-      return <Globe size={20} className="text-amber-500" />;
-    } else if (name.includes('hockey')) {
-      return <Sword size={20} className="text-blue-300" />;
-      
-    // Racquet Sports
-    } else if (name.includes('tennis')) {
-      return <CircleDashed size={20} className="text-green-300" />;
-    } else if (name.includes('badminton')) {
-      return <Wind size={20} className="text-white" />;
-    } else if (name.includes('table tennis') || name.includes('ping pong')) {
-      return <Table2 size={20} className="text-blue-200" />;
-      
-    // Combat Sports  
-    } else if (name.includes('box') || name.includes('fight')) {
-      return <HandIcon size={20} className="text-red-500" />;
-    } else if (name.includes('martial') || name.includes('karate') || name.includes('judo')) {
-      return <Sword size={20} className="text-gray-300" />;
-      
-    // Outdoor Activities  
-    } else if (name.includes('hike') || name.includes('climb')) {
-      return <Mountain size={20} className="text-amber-400" />;
-    } else if (name.includes('ski') || name.includes('snowboard')) {
-      return <Snowflake size={20} className="text-indigo-400" />;
-    } else if (name.includes('skate')) {
-      return <Wind size={20} className="text-purple-300" />;
-    } else if (name.includes('golf')) {
-      return <Flag size={20} className="text-green-500" />;
-      
-    // Dance & Rhythmic  
-    } else if (name.includes('danc')) {
-      return <Music size={20} className="text-pink-400" />;
-    } else if (name.includes('aerobic')) {
-      return <Music size={20} className="text-orange-300" />;
-      
-    // Mind-Body Exercises  
-    } else if (name.includes('yoga') || name.includes('stretch')) {
-      return <Flower2 size={20} className="text-purple-400" />;
-    } else if (name.includes('pilates')) {
-      return <Flower2 size={20} className="text-purple-300" />;
-    } else if (name.includes('gymnastics')) {
-      return <Trophy size={20} className="text-yellow-500" />;
+  // Date navigation functions
+  const formatSelectedDate = (date: Date): string => {
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }
+
+  const goToPreviousDay = () => {
+    const prevDay = new Date(selectedDate)
+    prevDay.setDate(prevDay.getDate() - 1)
+    setSelectedDate(prevDay)
+    setViewMode('date')
+  }
+
+  const goToNextDay = () => {
+    const nextDay = new Date(selectedDate)
+    nextDay.setDate(nextDay.getDate() + 1)
+    setSelectedDate(nextDay)
+    setViewMode('date')
+  }
+
+  const goToToday = () => {
+    setSelectedDate(new Date())
+    setViewMode('today')
+  }
+
+  const handleDateSelect = (dateStr: string) => {
+    setSelectedDate(new Date(dateStr))
+    setIsDatePickerOpen(false)
+    setViewMode('date')
+  }
+
+  // Get unique dates from all activity logs
+  const getUniqueDates = () => {
+    const dates = userActivityLogs.map(log => new Date(log.date).toISOString().split('T')[0])
+    return [...new Set(dates)].sort().reverse() // Sort by most recent first
+  }
+
+  // Calculate workout stats for the filtered logs
+  const calculateWorkoutStats = () => {
+    if (filteredLogs.length === 0) {
+      return { totalCalories: 0, totalMinutes: 0, workouts: 0 }
     }
     
-    // Default icon for other activities
-    return <Activity size={20} className="text-primary" />;
-  };
+    const totalCalories = filteredLogs.reduce((sum, log) => sum + log.caloriesBurned, 0)
+    const totalMinutes = filteredLogs.reduce((sum, log) => sum + log.duration, 0)
+    
+    return {
+      totalCalories,
+      totalMinutes,
+      workouts: filteredLogs.length
+    }
+  }
+
+  const workoutStats = calculateWorkoutStats()
+
+  const getActivityIcon = (activityName: string) => {
+    const activityNameLower = activityName.toLowerCase()
+    
+    if (activityNameLower.includes('run') || activityNameLower.includes('jog')) {
+      return <Footprints className="w-5 h-5" />
+    } else if (activityNameLower.includes('swim')) {
+      return <Waves className="w-5 h-5" />
+    } else if (activityNameLower.includes('walk')) {
+      return <Footprints className="w-5 h-5" />
+    } else if (activityNameLower.includes('bike') || activityNameLower.includes('cycle')) {
+      return <Bike className="w-5 h-5" />
+    } else if (activityNameLower.includes('weight') || activityNameLower.includes('strength')) {
+      return <Dumbbell className="w-5 h-5" />
+    } else if (activityNameLower.includes('yoga')) {
+      return <Flower2 className="w-5 h-5" />
+    } else if (activityNameLower.includes('hike') || activityNameLower.includes('climb')) {
+      return <Mountain className="w-5 h-5" />
+    } else if (activityNameLower.includes('ski') || activityNameLower.includes('snow')) {
+      return <Snowflake className="w-5 h-5" />
+    } else if (activityNameLower.includes('martial') || activityNameLower.includes('box')) {
+      return <Sword className="w-5 h-5" />
+    } else if (activityNameLower.includes('dance')) {
+      return <Music className="w-5 h-5" />
+    } else if (activityNameLower.includes('sail') || activityNameLower.includes('boat')) {
+      return <Ship className="w-5 h-5" />
+    } else if (activityNameLower.includes('golf')) {
+      return <Flag className="w-5 h-5" />
+    } else if (activityNameLower.includes('tennis') || activityNameLower.includes('badminton')) {
+      return <Activity className="w-5 h-5" />
+    } else if (activityNameLower.includes('football') || activityNameLower.includes('soccer')) {
+      return <Globe className="w-5 h-5" />
+    } else if (activityNameLower.includes('basketball')) {
+      return <CircleDashed className="w-5 h-5" />
+    } else if (activityNameLower.includes('volleyball')) {
+      return <HandIcon className="w-5 h-5" />
+    } else if (activityNameLower.includes('baseball')) {
+      return <Activity className="w-5 h-5" />
+    } else if (activityNameLower.includes('table') || activityNameLower.includes('ping')) {
+      return <Table2 className="w-5 h-5" />
+    } else {
+      return <Activity className="w-5 h-5" />
+    }
+  }
+
+  const getSelectedActivityName = () => {
+    const selectedActivity = activities.find(a => a.id === formData.activityId)
+    return selectedActivity ? selectedActivity.name : 'Select an activity'
+  }
 
   return (
-    <div>
-      {/* Activity Form */}
-      {showForm && (
-        <div className="bg-black/20 border border-white/10 rounded-xl p-6 mb-6 animate-in fade-in duration-300">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold">Add New Entry</h3>
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-3 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-red-200 text-xs sm:text-sm">{error}</p>
           </div>
+        </div>
+      )}
 
-          {error && (
-            <div className="mb-6 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="activityType" className="block text-sm font-medium mb-2 text-gray-200">
-                  Activity Type
-                </label>
-                <div className="relative" ref={dropdownRef}>
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary">
-                    <Activity size={18} />
-                  </div>
+      {/* Header with Add Workout Button */}
+      <div className="flex justify-end">
+        <button 
+          onClick={() => setShowForm(true)}
+          className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm transition-colors"
+          disabled={showForm}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Log Workout</span>
+        </button>
+      </div>
                   
-                  {/* Custom dropdown trigger */}
-                  <div 
-                    onClick={handleDropdownClick}
-                    className={`w-full bg-black/20 border ${isDropdownOpen ? 'border-primary/50 ring-1 ring-primary/50' : 'border-white/10'} rounded-xl pl-11 pr-10 py-3 text-white cursor-pointer transition-colors flex items-center`}
+      {/* Date Navigation */}
+      <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <button 
+            onClick={goToPreviousDay}
+            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Previous day"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+              className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-white/10 rounded-lg transition-colors text-sm"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>
+                {viewMode === 'all' 
+                  ? 'All Time' 
+                  : viewMode === 'today' 
+                    ? 'Today' 
+                    : formatSelectedDate(selectedDate)}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            
+            {isDatePickerOpen && (
+              <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/10 rounded-lg shadow-lg w-56 z-10">
+                <div className="p-2 border-b border-white/10">
+                  <button 
+                    onClick={goToToday}
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
                   >
-                    {formData.activityId ? (
-                      activities.find(a => a.id === formData.activityId)?.name || 'Select an activity'
-                    ) : (
-                      <span className="text-gray-400">Select an activity</span>
-                    )}
-                  </div>
-                  
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                    {isLoading ? <Loader2 size={18} className="animate-spin" /> : <ChevronDown size={18} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />}
-                  </div>
-                  
-                  {/* Custom dropdown menu */}
-                  {isDropdownOpen && (
-                    <div className="absolute z-10 w-full mt-1 py-2 bg-black/90 border border-white/10 rounded-xl shadow-lg backdrop-blur-sm max-h-60 overflow-y-auto custom-scrollbar">
-                      {isLoading ? (
-                        <div className="px-4 py-2 text-gray-400 flex items-center">
-                          <Loader2 size={16} className="animate-spin mr-2" />
-                          <span>Loading activities...</span>
-                        </div>
-                      ) : activities.length === 0 ? (
-                        <div className="px-4 py-2 text-gray-400">No activities available</div>
-                      ) : (
-                        activities.map(activity => (
-                          <div 
-                            key={activity.id} 
-                            onClick={() => handleActivitySelect(activity.id, activity.name)}
-                            className={`px-4 py-2 cursor-pointer hover:bg-white/5 transition-colors ${activity.id === formData.activityId ? 'bg-primary/20 text-primary' : 'text-white'}`}
-                          >
-                            {activity.name}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* Hidden actual select for form submission */}
-                  <select
-                    id="activityId"
-                    name="activityId"
-                    value={formData.activityId}
-                    onChange={handleChange}
-                    required
-                    className="hidden"
+                    Today
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setViewMode('all')
+                      setIsDatePickerOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
                   >
-                    <option value="">Select an activity</option>
-                    {activities.map(activity => (
-                      <option key={activity.id} value={activity.id}>
-                        {activity.name}
-                      </option>
-                    ))}
-                  </select>
+                    All Logs
+                  </button>
                 </div>
+                  
+                {getUniqueDates().length > 0 && (
+                  <div className="max-h-48 overflow-y-auto p-2">
+                    <div className="text-xs text-gray-400 px-3 py-1">Select Date</div>
+                    {getUniqueDates().map(date => (
+                      <button 
+                        key={date}
+                        onClick={() => handleDateSelect(date)}
+                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        {new Date(date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <button 
+            onClick={goToNextDay}
+            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Next day"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="text-xs sm:text-sm text-gray-400">
+          {filteredLogs.length} {filteredLogs.length === 1 ? 'entry' : 'entries'}
+        </div>
+      </div>
+                  
+      {/* Workout Stats Cards */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3">
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
+          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Total Calories</div>
+          <div className="text-base sm:text-xl font-semibold">{Math.round(workoutStats.totalCalories)} kcal</div>
+        </div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
+          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Activity Time</div>
+          <div className="text-base sm:text-xl font-semibold">{Math.round(workoutStats.totalMinutes)} min</div>
+        </div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
+          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Workouts</div>
+          <div className="text-base sm:text-xl font-semibold">{workoutStats.workouts}</div>
+        </div>
+      </div>
+
+      {/* Workout Form */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4"
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-base sm:text-lg font-medium">Log Workout</h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="relative" ref={dropdownRef}>
+                <label htmlFor="activity" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  Activity
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDropdownClick}
+                  disabled={isLoading || isSubmitting}
+                  className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white flex justify-between items-center text-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    {formData.activityId && (
+                      <span className="text-primary">
+                        {getActivityIcon(getSelectedActivityName())}
+                      </span>
+                    )}
+                    <span>{getSelectedActivityName()}</span>
+                  </div>
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  )}
+                </button>
                 
-                {error && activities.length === 0 && !isLoading && (
-                  <p className="mt-2 text-xs text-red-400">
-                    {error}
-                  </p>
+                {isDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-black/95 border border-white/10 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {activities.map(activity => (
+                      <button
+                        key={activity.id}
+                        type="button"
+                        onClick={() => selectActivity(activity.id, activity.name)}
+                        className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-primary">{getActivityIcon(activity.name)}</span>
+                          <span>{activity.name}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 
               <div>
-                <label htmlFor="title" className="block text-sm font-medium mb-2 text-gray-200">
-                  Title
+                <label htmlFor="title" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  Title/Note
                 </label>
                 <input
+                  type="text"
                   id="title"
                   name="title"
-                  type="text"
                   value={formData.title}
                   onChange={handleChange}
-                  required
-                  disabled={isSubmitting}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
-                  placeholder="Enter a title for your activity"
+                  placeholder="Enter a title for this workout"
+                  className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
               </div>
 
               <div>
-                <label htmlFor="duration" className="block text-sm font-medium mb-2 text-gray-200">
+                <label htmlFor="duration" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
                   Duration (minutes)
                 </label>
                 <input
+                  type="number"
                   id="duration"
                   name="duration"
-                  type="number"
                   min="1"
                   value={formData.duration}
                   onChange={handleChange}
-                  required
-                  disabled={isSubmitting}
-                  className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
-                  placeholder="Enter duration in minutes"
+                  className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 />
               </div>
-            </div>
 
-            <div className="mt-8 grid grid-cols-2 gap-4">
+              <div className="mt-4 flex justify-end gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-3 py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !formData.activityId || !formData.duration}
+                  className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none text-sm"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Workout Logs List */}
+      {isLoadingLogs ? (
+        <div className="text-center py-6">
+          <div className="animate-pulse text-sm">Loading workout logs...</div>
+        </div>
+      ) : filteredLogs.length === 0 ? (
+        <div className="bg-black/30 border border-white/5 rounded-lg p-6 text-center">
+          <Activity className="w-8 h-8 mx-auto mb-3 text-gray-400" />
+          <h3 className="text-base sm:text-lg font-medium mb-2">No workout logs {viewMode !== 'all' ? 'for this day' : ''}</h3>
+          <p className="text-gray-400 max-w-md mx-auto mb-4 text-sm">
+            Start tracking your workouts to monitor your fitness progress.
+          </p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 text-sm transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Log Workout</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredLogs.map((log) => (
+            <div
+              key={log._id}
+              className="bg-black/30 border border-white/5 rounded-lg p-3 flex items-center justify-between gap-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 text-primary rounded-lg">
+                  {getActivityIcon(log.activity)}
+                </div>
+                <div>
+                  <div className="font-medium text-sm sm:text-base">{log.title || log.activity}</div>
+                  <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-300">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                      <span>{formatDate(log.date)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                      <span>{log.duration} min</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400" />
+                      <span>{Math.round(log.caloriesBurned)} kcal</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button
-                type="submit"
-                disabled={isSubmitting || isLoading}
-                className="bg-primary hover:bg-primary/90 text-white py-2.5 rounded-xl transition-colors w-full disabled:opacity-50 flex justify-center items-center"
+                onClick={() => confirmDelete(log._id, log.title || log.activity)}
+                className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                aria-label="Delete"
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin mr-2" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  'Save Entry'
-                )}
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => setShowForm(false)}
-                className="border border-white/10 hover:bg-white/5 py-2.5 rounded-xl transition-colors w-full disabled:opacity-50"
-              >
-                Cancel
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </div>
-          </form>
+          ))}
         </div>
       )}
 
       {/* Delete Confirmation Modal */}
+      <AnimatePresence>
       {deleteConfirmation.visible && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-gray-900 border border-white/10 rounded-xl p-6 max-w-md w-full mx-4 animate-in fade-in zoom-in duration-300">
-            <div className="flex items-center mb-4 text-red-400">
-              <AlertTriangle className="mr-2" size={24} />
-              <h3 className="text-lg font-semibold">Delete Activity</h3>
-            </div>
-            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-black/90 border border-white/10 rounded-xl p-6 max-w-md w-full mx-4"
+            >
+              <h3 className="text-lg font-medium mb-2">Delete Workout</h3>
             <p className="text-gray-300 mb-6">
-              Are you sure you want to delete <span className="font-semibold text-white">{deleteConfirmation.title}</span>? This action cannot be undone.
+                Are you sure you want to delete "{deleteConfirmation.title}"? This action cannot be undone.
             </p>
             
             <div className="flex justify-end gap-3">
               <button
                 onClick={cancelDelete}
-                disabled={isDeleting}
-                className="px-4 py-2 border border-white/10 hover:bg-white/5 rounded-lg transition-colors"
+                  className="px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteActivity(deleteConfirmation.activityId)}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors flex items-center"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin mr-2" />
-                    <span>Deleting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={16} className="mr-2" />
-                    <span>Delete</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* User Activity Logs */}
-      <div className="bg-black/20 border border-white/5 rounded-xl p-6">
-        <h3 className="text-lg font-semibold mb-4">Your Activity History</h3>
-        
-        {isLoadingLogs ? (
-          <p className="text-gray-300">Loading your activities...</p>
-        ) : userActivityLogs.length > 0 ? (
-          <div className="space-y-4">
-            {userActivityLogs.map((log) => (
-              <div 
-                key={log._id} 
-                className="p-4 border border-white/10 rounded-lg hover:border-white/20 transition-colors relative group"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center">
-                    <div className="mr-3 p-2 bg-black/30 rounded-lg">
-                      {getActivityIcon(log.activity)}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-white">{log.title}</h4>
-                      <p className="text-sm text-gray-400 mt-1">{log.activity}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-500">{formatDate(log.date)}</span>
-                </div>
-                
-                <div className="mt-3 flex justify-between items-center">
-                  <span className="text-sm text-primary">{log.caloriesBurned} calories burned</span>
-                  
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => confirmDelete(log._id, log.title)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md"
-                      title="Delete activity"
-                      aria-label="Delete activity"
-                    >
-                      <Trash2 size={16} />
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
                     </button>
-                    <span className="text-sm text-gray-400">{log.duration} minutes</span>
-                  </div>
-                </div>
               </div>
-            ))}
+            </motion.div>
           </div>
-        ) : (
-          <p className="text-gray-300">You haven't logged any activities yet.</p>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   )
 } 

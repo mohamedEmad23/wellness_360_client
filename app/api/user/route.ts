@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
         });
 
         const result = await response.json();
-
+        console.log(result);
         return new NextResponse(
             JSON.stringify({
                 success: response.ok,
@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
     const accessToken = cookies().get('access_token')?.value;
     const body = await req.json();
+    console.log(body);
 
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user`, {
@@ -58,7 +59,6 @@ export async function PUT(req: NextRequest) {
         });
 
         const result = await response.json();
-
         const res = new NextResponse(
             JSON.stringify({
                 success: response.ok,

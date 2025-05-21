@@ -22,62 +22,46 @@ export default function ActivityTabs({ showAddEntry, setShowAddEntry }: Activity
   return (
     <div className="max-w-6xl mx-auto">
       {/* Tab Navigation */}
-      <div className="flex bg-black/30 p-1 rounded-xl mb-8 w-full md:w-auto">
+      <div className="flex overflow-x-auto bg-black/30 p-1 rounded-xl mb-4 w-full no-scrollbar">
         <button
           onClick={() => setActiveTab('workout')}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'workout'
               ? 'bg-primary text-white'
               : 'text-gray-300 hover:text-white hover:bg-white/10'
           }`}
         >
-          <Activity className="w-4 h-4" />
+          <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Workout</span>
         </button>
         
         <button
           onClick={() => setActiveTab('nutrition')}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'nutrition'
               ? 'bg-primary text-white'
               : 'text-gray-300 hover:text-white hover:bg-white/10'
           }`}
         >
-          <Utensils className="w-4 h-4" />
+          <Utensils className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Nutrition</span>
         </button>
         
         <button
           onClick={() => setActiveTab('sleep')}
-          className={`flex items-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
             activeTab === 'sleep'
               ? 'bg-primary text-white'
               : 'text-gray-300 hover:text-white hover:bg-white/10'
           }`}
         >
-          <Moon className="w-4 h-4" />
+          <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span>Sleep</span>
         </button>
       </div>
 
-      {/* Content Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
-        
-        {/* Show Add Entry button only for Workout tab */}
-        {activeTab === 'workout' && (
-          <button 
-            onClick={() => setFormVisible(!formVisible)}
-            className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Entry</span>
-          </button>
-        )}
-      </div>
-
       {/* Content Area */}
-      <div className="bg-black/20 border border-white/5 rounded-xl p-6">
+      <div className="bg-black/20 border border-white/5 rounded-xl p-4 md:p-6">
         {activeTab === 'workout' && (
           <div className="animate-in fade-in duration-300">
             <WorkoutTracker showForm={formVisible} setShowForm={setFormVisible} />

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Moon, ChevronDown, Pencil, Trash2, AlertTriangle, X, Clock, Calendar, Star } from 'lucide-react'
+import { Plus, Moon, ChevronDown, Pencil, Trash2, AlertTriangle, X, Clock, Calendar, Star, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface SleepEntry {
@@ -24,6 +24,8 @@ const SLEEP_QUALITY_OPTIONS = [
   { label: 'Fair', value: 2, description: 'Had trouble sleeping' },
   { label: 'Poor', value: 1, description: 'Barely slept or very restless' }
 ]
+
+type ViewMode = 'today' | 'all' | 'date'
 
 interface TooltipProps {
   children: React.ReactNode
@@ -56,15 +58,18 @@ const Tooltip = ({ children, content, position = 'top' }: TooltipProps) => {
 export default function SleepTracker() {
   const [isAddingEntry, setIsAddingEntry] = useState(false)
   const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([])
+  const [filteredEntries, setFilteredEntries] = useState<SleepEntry[]>([])
   const [isQualityOpen, setIsQualityOpen] = useState(false)
   const [selectedQuality, setSelectedQuality] = useState<{ label: string; value: number } | null>(null)
-  const [selectedDate, setSelectedDate] = useState<string>('')
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [editingEntry, setEditingEntry] = useState<SleepEntry | null>(null)
   const [deletingEntry, setDeletingEntry] = useState<SleepEntry | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('today')
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
 
   const fetchSleepEntries = async () => {
     try {
@@ -88,6 +93,10 @@ export default function SleepTracker() {
 
       const data = await response.json()
       setSleepEntries(data)
+      
+      // Filter entries based on current view mode
+      filterEntries(data, viewMode, selectedDate)
+      
       setEditingEntry(null)
       setIsAddingEntry(false)
     } catch (err) {
@@ -98,20 +107,43 @@ export default function SleepTracker() {
     }
   }
 
+  // Function to filter entries based on date and view mode
+  const filterEntries = (entries: SleepEntry[], mode: ViewMode, date: Date) => {
+    if (mode === 'all') {
+      setFilteredEntries(entries)
+      return
+    }
+
+    // Format the selected date to compare with entry dates (YYYY-MM-DD format)
+    const selectedDateStr = date.toISOString().split('T')[0]
+    
+    // Filter entries for the selected date
+    const filtered = entries.filter(entry => {
+      const entryDate = new Date(entry.startTime).toISOString().split('T')[0]
+      return entryDate === selectedDateStr
+    })
+    
+    setFilteredEntries(filtered)
+  }
+
   useEffect(() => {
     fetchSleepEntries()
   }, [])
 
   useEffect(() => {
+    // Update filtered entries when view mode or selected date changes
+    filterEntries(sleepEntries, viewMode, selectedDate)
+  }, [viewMode, selectedDate, sleepEntries])
+
+  useEffect(() => {
     if (isAddingEntry) {
       if (!editingEntry) {
-        const today = new Date()
-        setSelectedDate(today.toISOString().split('T')[0])
+        const dateInputValue = selectedDate.toISOString().split('T')[0]
         setSelectedTime('')
         setSelectedQuality(null)
       } else {
         const date = new Date(editingEntry.startTime)
-        setSelectedDate(date.toISOString().split('T')[0])
+        setSelectedDate(date)
         setSelectedTime(date.toTimeString().split(':').slice(0, 2).join(':'))
         const quality = SLEEP_QUALITY_OPTIONS.find(q => q.value === editingEntry.rating)
         setSelectedQuality(quality || null)
@@ -198,16 +230,19 @@ export default function SleepTracker() {
       // Use the [id] route for deletion
       const response = await fetch(`/api/sleep/${entry._id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
       })
-
+      
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || 'Failed to delete sleep record')
       }
 
-      await fetchSleepEntries()
       setDeletingEntry(null)
+      await fetchSleepEntries()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete sleep record')
       console.error('Error deleting sleep record:', err)
@@ -217,387 +252,478 @@ export default function SleepTracker() {
   }
 
   const formatDateTime = (dateString: string): string => {
-    return new Date(dateString).toLocaleString('en-US', {
+    const date = new Date(dateString)
+    return `${date.toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
+    })} at ${date.toLocaleTimeString('en-US', {
       hour: 'numeric',
-      minute: 'numeric',
-      hour12: true
-    })
+      minute: '2-digit',
+      hour12: true,
+    })}`
   }
 
   const calculateDuration = (startTime: string, endTime: string): number => {
-    const start = new Date(startTime)
-    const end = new Date(endTime)
-    return (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    const start = new Date(startTime).getTime()
+    const end = new Date(endTime).getTime()
+    return Math.round((end - start) / (1000 * 60 * 60) * 10) / 10 // Round to 1 decimal place
   }
 
   const handleEdit = (entry: SleepEntry) => {
     setEditingEntry(entry)
     setIsAddingEntry(true)
-    setSelectedQuality(SLEEP_QUALITY_OPTIONS.find(q => q.value === entry.rating) || null)
   }
 
   const handleCancel = () => {
     setIsAddingEntry(false)
     setEditingEntry(null)
-    setSelectedQuality(null)
-    setSelectedDate('')
-    setSelectedTime('')
   }
 
+  // Date navigation functions
+  const formatSelectedDate = (date: Date): string => {
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  }
+
+  const goToPreviousDay = () => {
+    const prevDay = new Date(selectedDate)
+    prevDay.setDate(prevDay.getDate() - 1)
+    setSelectedDate(prevDay)
+    setViewMode('date')
+  }
+
+  const goToNextDay = () => {
+    const nextDay = new Date(selectedDate)
+    nextDay.setDate(nextDay.getDate() + 1)
+    setSelectedDate(nextDay)
+    setViewMode('date')
+  }
+
+  const goToToday = () => {
+    setSelectedDate(new Date())
+    setViewMode('today')
+  }
+
+  const handleDateSelect = (dateStr: string) => {
+    setSelectedDate(new Date(dateStr))
+    setIsDatePickerOpen(false)
+    setViewMode('date')
+  }
+
+  // Get unique dates from all sleep entries
+  const getUniqueDates = () => {
+    const dates = sleepEntries.map(entry => new Date(entry.startTime).toISOString().split('T')[0])
+    return [...new Set(dates)].sort().reverse() // Sort by most recent first
+  }
+
+  // Calculate average sleep metrics for the filtered entries
+  const calculateSleepStats = () => {
+    if (filteredEntries.length === 0) {
+      return { totalHours: 0, avgDuration: 0, avgRating: 0 }
+    }
+    
+    const totalDuration = filteredEntries.reduce((sum, entry) => sum + entry.duration, 0)
+    const totalRating = filteredEntries.reduce((sum, entry) => sum + entry.rating, 0)
+    
+    return {
+      totalHours: totalDuration,
+      avgDuration: totalDuration / filteredEntries.length,
+      avgRating: totalRating / filteredEntries.length
+    }
+  }
+
+  const sleepStats = calculateSleepStats()
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Moon className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-semibold">Sleep Tracker</h2>
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3 mb-3 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-red-200 text-xs sm:text-sm">{error}</p>
+          </div>
         </div>
-        <button
+      )}
+
+      {/* Header with Add Sleep Entry Button */}
+      <div className="flex justify-end">
+        <button 
           onClick={() => setIsAddingEntry(true)}
+          className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm transition-colors"
           disabled={isAddingEntry}
-          className="flex items-center gap-2 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
         >
-          <Plus className="w-4 h-4" />
-          Add Entry
+          <Plus className="w-3.5 h-3.5" />
+          <span>Log Sleep</span>
         </button>
       </div>
 
+      {/* Date Navigation */}
+      <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <button 
+            onClick={goToPreviousDay}
+            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Previous day"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+              className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-white/10 rounded-lg transition-colors text-sm"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>
+                {viewMode === 'all' 
+                  ? 'All Time' 
+                  : viewMode === 'today' 
+                    ? 'Today' 
+                    : formatSelectedDate(selectedDate)}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            
+            {isDatePickerOpen && (
+              <div className="absolute top-full left-0 mt-1 bg-black/90 border border-white/10 rounded-lg shadow-lg w-56 z-10">
+                <div className="p-2 border-b border-white/10">
+                  <button 
+                    onClick={goToToday}
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    Today
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setViewMode('all')
+                      setIsDatePickerOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    All Logs
+                  </button>
+                </div>
+                
+                {getUniqueDates().length > 0 && (
+                  <div className="max-h-48 overflow-y-auto p-2">
+                    <div className="text-xs text-gray-400 px-3 py-1">Select Date</div>
+                    {getUniqueDates().map(date => (
+                      <button 
+                        key={date}
+                        onClick={() => handleDateSelect(date)}
+                        className="w-full text-left px-3 py-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        {new Date(date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <button 
+            onClick={goToNextDay}
+            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Next day"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="text-xs sm:text-sm text-gray-400">
+          {filteredEntries.length} {filteredEntries.length === 1 ? 'entry' : 'entries'}
+        </div>
+      </div>
+
+      {/* Sleep Stats Cards */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-3">
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
+          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Total Sleep</div>
+          <div className="text-base sm:text-xl font-semibold">{Math.round(sleepStats.totalHours * 10) / 10} hours</div>
+        </div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
+          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Average Duration</div>
+          <div className="text-base sm:text-xl font-semibold">{Math.round(sleepStats.avgDuration * 10) / 10} hours</div>
+        </div>
+        <div className="bg-black/30 border border-white/5 rounded-lg p-2 sm:p-4">
+          <div className="text-primary text-xs sm:text-sm font-medium mb-1">Sleep Quality</div>
+          <div className="flex items-center">
+            <span className="text-base sm:text-xl font-semibold mr-2">{Math.round(sleepStats.avgRating * 10) / 10}</span>
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                    star <= sleepStats.avgRating
+                      ? 'text-yellow-400 fill-yellow-400'
+                      : star - 0.5 <= sleepStats.avgRating
+                      ? 'text-yellow-400 fill-yellow-400/50'
+                      : 'text-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sleep Entry Form */}
       <AnimatePresence>
-        {error && (
+        {isAddingEntry && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-lg"
+            className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4"
           >
-            {error}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-base sm:text-lg font-medium">{editingEntry ? 'Edit Sleep Entry' : 'Add Sleep Entry'}</h3>
+              <button
+                onClick={handleCancel}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-      {isLoading ? (
-        <div className="text-center py-12 text-gray-400">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p>Loading sleep records...</p>
-        </div>
-      ) : (
-        <AnimatePresence mode="wait">
-          {isAddingEntry ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="bg-black/20 border border-white/10 rounded-xl p-6"
-            >
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="date" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      id="date"
-                      name="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      required
-                      className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 
-                        hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/50 
-                        transition-all duration-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="time" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-primary" />
-                      Sleep Time
-                    </label>
-                    <input
-                      type="time"
-                      id="time"
-                      name="time"
-                      value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
-                      required
-                      className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 
-                        hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/50 
-                        transition-all duration-200"
-                    />
-                  </div>
-                </div>
-
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label htmlFor="duration" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-primary" />
+                  <label htmlFor="date" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    defaultValue={selectedDate.toISOString().split('T')[0]}
+                    className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="time" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    id="time"
+                    name="time"
+                    defaultValue={selectedTime}
+                    className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <label htmlFor="duration" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
                     Duration (hours)
                   </label>
                   <input
                     type="number"
                     id="duration"
                     name="duration"
-                    step="0.5"
-                    min="0"
-                    max="24"
+                    min="0.1"
+                    step="0.1"
+                    defaultValue={editingEntry?.duration || "8"}
+                    className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     required
-                    placeholder="7.5"
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 
-                      hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/50 
-                      transition-all duration-200"
                   />
                 </div>
-
                 <div>
-                  <label htmlFor="rating" className="block text-sm font-medium mb-2 flex items-center gap-2">
-                    <Star className="w-4 h-4 text-primary" />
+                  <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
                     Sleep Quality
                   </label>
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => setIsQualityOpen(!isQualityOpen)}
-                      className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-left flex items-center justify-between hover:border-primary/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all duration-200"
+                      className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white flex justify-between items-center text-sm"
                     >
-                      <span className={selectedQuality ? 'text-white' : 'text-gray-500'}>
-                        {selectedQuality ? selectedQuality.label : 'Select sleep quality'}
-                      </span>
-                      <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${isQualityOpen ? 'rotate-180' : ''}`} />
+                      <span>{selectedQuality ? selectedQuality.label : 'Select quality'}</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
                     </button>
-
-                    <AnimatePresence>
-                      {isQualityOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute z-10 w-full mt-2 bg-black/90 border border-white/10 rounded-lg shadow-lg backdrop-blur-sm"
-                        >
-                          <div className="py-1">
-                            {SLEEP_QUALITY_OPTIONS.map((option) => (
-                              <button
-                                key={option.value}
-                                type="button"
-                                onClick={() => handleQualitySelect(option)}
-                                className={`w-full px-4 py-2.5 text-left hover:bg-primary/20 transition-colors ${
-                                  selectedQuality?.value === option.value
-                                    ? 'bg-primary/20 text-primary'
-                                    : 'text-white'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span>{option.label}</span>
-                                  <div className="flex items-center gap-1">
-                                    {Array.from({ length: option.value }).map((_, i) => (
-                                      <Star key={i} className="w-4 h-4 fill-current" />
-                                    ))}
-                                  </div>
-                                </div>
-                                <p className="text-sm text-gray-400 mt-1">{option.description}</p>
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    
+                    {isQualityOpen && (
+                      <div className="absolute z-10 mt-1 w-full bg-black/95 border border-white/10 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {SLEEP_QUALITY_OPTIONS.map((option) => (
+                          <button
+                            type="button"
+                            key={option.value}
+                            onClick={() => handleQualitySelect(option)}
+                            className="w-full text-left p-3 hover:bg-white/5 border-b border-white/5 transition-colors"
+                          >
+                            <div className="flex justify-between items-center">
+                              <span>{option.label}</span>
+                              <div className="flex">
+                                {[...Array(option.value)].map((_, i) => (
+                                  <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">{option.description}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
+              </div>
 
-    <div>
-                  <label htmlFor="notes" className="block text-sm font-medium mb-2">
-                    Notes
-                  </label>
-                  <textarea
-                    id="notes"
-                    name="notes"
-                    rows={3}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 
-                      hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary/50 
-                      transition-all duration-200"
-                    placeholder="How did you sleep? Any disturbances?"
-                  />
-                </div>
+              <div>
+                <label htmlFor="notes" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1">
+                  Notes (optional)
+                </label>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows={2}
+                  defaultValue={editingEntry?.notes || ""}
+                  className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  placeholder="How did you sleep? Any observations about your sleep quality?"
+                />
+              </div>
 
-                <div className="flex gap-3">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 bg-primary hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 px-4 rounded-lg 
-                      transition-all duration-200 hover:shadow-lg hover:shadow-primary/25"
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>{editingEntry ? 'Updating...' : 'Saving...'}</span>
-                      </div>
-                    ) : (
-                      editingEntry ? 'Update Entry' : 'Save Entry'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    disabled={isSubmitting}
-                    className="flex-1 bg-black/50 border border-white/10 text-white py-2.5 px-4 rounded-lg 
-                      hover:border-primary/50 hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed
-                      transition-all duration-200"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-4"
+              <div className="mt-4 flex justify-end gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-3 py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none text-sm"
+                >
+                  {isSubmitting 
+                    ? (editingEntry ? 'Updating...' : 'Saving...') 
+                    : (editingEntry ? 'Update' : 'Save')}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sleep Entries List */}
+      {isLoading ? (
+        <div className="text-center py-6">
+          <div className="animate-pulse text-sm">Loading sleep logs...</div>
+        </div>
+      ) : filteredEntries.length === 0 ? (
+        <div className="bg-black/30 border border-white/5 rounded-lg p-6 text-center">
+          <Moon className="w-8 h-8 mx-auto mb-3 text-gray-400" />
+          <h3 className="text-base sm:text-lg font-medium mb-2">No sleep logs {viewMode !== 'all' ? 'for this day' : ''}</h3>
+          <p className="text-gray-400 max-w-md mx-auto mb-4 text-sm">
+            Start tracking your sleep patterns to improve your rest quality.
+          </p>
+          <button
+            onClick={() => setIsAddingEntry(true)}
+            className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 text-sm transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Log Sleep</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredEntries.map((entry) => (
+            <div
+              key={entry._id}
+              className="bg-black/30 border border-white/5 rounded-lg p-3"
             >
-              {sleepEntries.map((entry: SleepEntry) => (
-                <motion.div
-                  key={entry._id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  className={`bg-black/20 border rounded-xl p-6 flex items-start gap-4 
-                    transition-all duration-200 hover:border-primary/50 hover:bg-black/30`}
-                >
-                  <div className="p-3 rounded-lg bg-primary/10">
-                    <Moon className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="space-y-1">
-                        <div className="text-sm text-gray-400">
-                          {formatDateTime(entry.startTime)}
-                        </div>
-                        <div className="text-xs text-gray-500 flex items-center gap-2">
-                          <Clock className="w-4 h-4" />
-                          Duration: {calculateDuration(entry.startTime, entry.endTime).toFixed(1)} hours
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: entry.rating }).map((_, i) => (
-                            <Star key={i} className="w-4 h-4 text-primary fill-current" />
-                          ))}
-                          {Array.from({ length: 5 - entry.rating }).map((_, i) => (
-                            <Star key={i} className="w-4 h-4 text-gray-600" />
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Tooltip content="Edit sleep entry" position="left">
-                            <button
-                              onClick={() => handleEdit(entry)}
-                              disabled={isSubmitting}
-                              className="p-2 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Pencil className="w-4 h-4 text-primary" />
-                            </button>
-                          </Tooltip>
-                          <Tooltip content="Delete sleep entry" position="left">
-                            <button
-                              onClick={() => setDeletingEntry(entry)}
-                              disabled={isSubmitting}
-                              className="p-2 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </button>
-                          </Tooltip>
-                        </div>
-                      </div>
+              <div className="flex justify-between items-start mb-1">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm sm:text-base font-medium">{entry.duration} hours</div>
+                    <div className="flex">
+                      {[...Array(entry.rating)].map((_, i) => (
+                        <Star key={i} className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-yellow-400" />
+                      ))}
                     </div>
-                    {entry.notes && (
-                      <p className="text-sm text-gray-300">{entry.notes}</p>
-                    )}
                   </div>
-                </motion.div>
-              ))}
-
-              {sleepEntries.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-12 text-gray-400"
-                >
-                  <Moon className="w-12 h-12 mx-auto mb-4 text-gray-600" />
-                  <p>No sleep entries yet. Start tracking your sleep by adding an entry.</p>
-                </motion.div>
+                  <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1 sm:gap-2 mt-1">
+                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    <span>{formatDateTime(entry.startTime)}</span>
+                  </div>
+                </div>
+                <div className="flex gap-1 sm:gap-2">
+                  <Tooltip content="Edit">
+                    <button
+                      onClick={() => handleEdit(entry)}
+                      className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Delete">
+                    <button
+                      onClick={() => setDeletingEntry(entry)}
+                      className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </button>
+                  </Tooltip>
+                </div>
+              </div>
+              {entry.notes && (
+                <div className="mt-2 text-xs sm:text-sm text-gray-300 bg-white/5 p-2 sm:p-3 rounded-lg">
+                  {entry.notes}
+                </div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deletingEntry && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-              onClick={() => !isSubmitting && setDeletingEntry(null)}
-            />
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+              className="bg-black/90 border border-white/10 rounded-xl p-4 sm:p-6 max-w-md w-full mx-4"
             >
-              <div className="bg-black/90 border border-white/10 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl pointer-events-auto">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-red-500/10">
-                    <AlertTriangle className="w-6 h-6 text-red-500" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2">Delete Sleep Entry</h3>
-                    <p className="text-gray-400 mb-4">
-                      Are you sure you want to delete this sleep entry? This action cannot be undone.
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleDelete(deletingEntry)}
-                        disabled={isSubmitting}
-                        className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 px-4 rounded-lg 
-                          transition-all duration-200 hover:shadow-lg hover:shadow-red-500/25"
-                      >
-                        {isSubmitting ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>Deleting...</span>
-                          </div>
-                        ) : (
-                          'Delete Entry'
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setDeletingEntry(null)}
-                        disabled={isSubmitting}
-                        className="flex-1 bg-black/50 border border-white/10 text-white py-2.5 px-4 rounded-lg 
-                          hover:border-white/20 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed
-                          transition-all duration-200"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setDeletingEntry(null)}
-                    disabled={isSubmitting}
-                    className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <X className="w-4 h-4 text-gray-400" />
-                  </button>
-                </div>
+              <h3 className="text-base sm:text-lg font-medium mb-2">Delete Sleep Entry</h3>
+              <p className="text-xs sm:text-sm text-gray-300 mb-4 sm:mb-6">
+                Are you sure you want to delete this sleep entry? This action cannot be undone.
+              </p>
+              
+              <div className="flex justify-end gap-2 sm:gap-3">
+                <button
+                  onClick={() => setDeletingEntry(null)}
+                  className="px-3 py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(deletingEntry)}
+                  disabled={isSubmitting}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg transition-colors text-sm"
+                >
+                  {isSubmitting ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </div>
