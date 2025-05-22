@@ -92,16 +92,22 @@ export default function NutritionTracker() {
       return
     }
 
-    // Format the selected date to compare with log dates (YYYY-MM-DD format)
-    const selectedDateStr = date.toISOString().split('T')[0]
-    
-    // Filter logs for the selected date
+    // Use local date components to avoid timezone issues
+    const selectedYear = date.getFullYear();
+    const selectedMonth = date.getMonth();
+    const selectedDay = date.getDate();
+
+    // Filter logs for the selected date using local date comparison
     const filtered = logs.filter(log => {
-      const logDate = new Date(log.date).toISOString().split('T')[0]
-      return logDate === selectedDateStr
-    })
+      const logDate = new Date(log.date);
+      return (
+        logDate.getFullYear() === selectedYear &&
+        logDate.getMonth() === selectedMonth &&
+        logDate.getDate() === selectedDay
+      );
+    });
     
-    setFilteredLogs(filtered)
+    setFilteredLogs(filtered);
   }
 
   useEffect(() => {
@@ -311,8 +317,14 @@ export default function NutritionTracker() {
 
   // Go to today
   const goToToday = () => {
-    setSelectedDate(new Date())
-    setViewMode('today')
+    // Create a new date at the start of today in local timezone
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day in local timezone
+    setSelectedDate(today);
+    setViewMode('today');
+    
+    // Re-filter logs with the newly set date
+    filterLogs(foodLogs, 'today', today);
   }
 
   // Handle date selection

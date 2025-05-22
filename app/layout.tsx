@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Template from '@/components/layout/Template'
 import { AuthProvider } from '@/contexts/auth'
+import { NotificationProvider } from '@/contexts/notifications'
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <Template>{children}</Template>
+          <NotificationProvider>
+            <Template>{children}</Template>
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>

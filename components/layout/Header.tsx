@@ -4,6 +4,7 @@ import { Moon, Menu, X, User, ChevronDown, LogOut, LayoutDashboard, MessageSquar
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth'
 import ChatbotOverlay from '@/components/dashboard/ChatbotOverlay'
+import NotificationCenter from './NotificationCenter'
 
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -77,13 +78,16 @@ export default function Header() {
             
             {/* Chatbot Button - Only show if authenticated */}
             {isAuthenticated && (
-              <button
-                onClick={() => setIsChatbotOpen(true)}
-                className="flex items-center gap-2 p-2 bg-primary rounded-full text-white hover:bg-primary-dark transition-all duration-300"
-                aria-label="Open AI assistant"
-              >
-                <MessageSquareText className="w-5 h-5" />
-              </button>
+              <>
+                <NotificationCenter />
+                <button
+                  onClick={() => setIsChatbotOpen(true)}
+                  className="flex items-center gap-2 p-2 bg-primary rounded-full text-white hover:bg-primary-dark transition-all duration-300"
+                  aria-label="Open AI assistant"
+                >
+                  <MessageSquareText className="w-5 h-5" />
+                </button>
+              </>
             )}
             
             {isAuthenticated ? (
@@ -186,16 +190,21 @@ export default function Header() {
               
               {/* Mobile Chatbot Button - Only show if authenticated */}
               {isAuthenticated && (
-                <button 
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setIsChatbotOpen(true);
-                  }}
-                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-all duration-300 px-2 py-2 rounded-lg hover:bg-white/5"
-                >
-                  <MessageSquareText className="w-4 h-4" />
-                  Chat with AI Assistant
-                </button>
+                <>
+                  <button 
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsChatbotOpen(true);
+                    }}
+                    className="flex items-center gap-2 text-gray-300 hover:text-white transition-all duration-300 px-2 py-2 rounded-lg hover:bg-white/5"
+                  >
+                    <MessageSquareText className="w-4 h-4" />
+                    Chat with AI Assistant
+                  </button>
+                  <div className="px-2 py-2">
+                    <NotificationCenter />
+                  </div>
+                </>
               )}
               
               {isAuthenticated ? (

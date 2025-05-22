@@ -3,6 +3,7 @@
 import { Menu, Plus, Calendar, MessageSquareText } from 'lucide-react'
 import { useState } from 'react'
 import ChatbotOverlay from './ChatbotOverlay'
+import NotificationCenter from '../layout/NotificationCenter'
 
 interface DashboardHeaderProps {
   title: string
@@ -69,6 +70,10 @@ export default function DashboardHeader({
       
       {/* Chatbot overlay */}
       <ChatbotOverlay isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
+
+      <div className="flex items-center space-x-2">
+        <NotificationCenter />
+      </div>
     </header>
   )
 } 

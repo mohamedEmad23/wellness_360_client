@@ -58,7 +58,6 @@ function CompleteProfileFormContent() {
         updateUser(result.data)
         
         router.push('/dashboard')
-        console.log('Profile updated successfully, redirecing')
       } else {
         setError(result.message || 'Failed to update profile')
       }

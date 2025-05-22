@@ -114,10 +114,12 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
       return
     }
 
-    // Format the selected date to compare with log dates (YYYY-MM-DD format)
-    const selectedDateStr = date.toISOString().split('T')[0]
+    // Use local date components to avoid timezone issues
+    const selectedYear = date.getFullYear();
+    const selectedMonth = date.getMonth();
+    const selectedDay = date.getDate();
     
-    // Filter logs for the selected date
+    // Filter logs for the selected date using local date comparison
     const filtered = logs.filter(log => {
       try {
         // Check if date exists and is valid
@@ -132,8 +134,12 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
           return false
         }
 
-        const logDateStr = logDate.toISOString().split('T')[0]
-        return logDateStr === selectedDateStr
+        // Compare year, month, and day components
+        return (
+          logDate.getFullYear() === selectedYear &&
+          logDate.getMonth() === selectedMonth &&
+          logDate.getDate() === selectedDay
+        );
       } catch (error) {
         console.error('Error processing log date:', error, log)
         return false
@@ -409,8 +415,14 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
   }
 
   const goToToday = () => {
-    setSelectedDate(new Date())
-    setViewMode('today')
+    // Create a new date at the start of today in local timezone
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day in local timezone
+    setSelectedDate(today);
+    setViewMode('today');
+    
+    // Re-filter logs with the newly set date
+    filterLogs(userActivityLogs, 'today', today);
   }
 
   const handleDateSelect = (dateStr: string) => {
@@ -762,8 +774,18 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
                     type="date"
                     id="date"
                     name="date"
-                    value={selectedDate.toISOString().split('T')[0]}
-                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                    value={selectedDate instanceof Date && !isNaN(selectedDate.getTime()) 
+                      ? new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000)
+                          .toISOString()
+                          .split('T')[0]
+                      : new Date().toISOString().split('T')[0]
+                    }
+                    onChange={(e) => {
+                      // Create date at noon to avoid timezone issues
+                      const date = new Date(e.target.value);
+                      date.setHours(12, 0, 0, 0);
+                      setSelectedDate(date);
+                    }}
                     className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                   />
                 </div>

@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
+    console.log(error);
     return NextResponse.json(
       { error: 'Failed to create sleep record' },
       { status: 500 }

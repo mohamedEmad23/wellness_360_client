@@ -114,16 +114,22 @@ export default function SleepTracker() {
       return
     }
 
-    // Format the selected date to compare with entry dates (YYYY-MM-DD format)
-    const selectedDateStr = date.toISOString().split('T')[0]
+    // Fix: Use local date formatting to avoid timezone issues
+    const selectedYear = date.getFullYear();
+    const selectedMonth = date.getMonth();
+    const selectedDay = date.getDate();
     
-    // Filter entries for the selected date
+    // Filter entries for the selected date accounting for timezone differences
     const filtered = entries.filter(entry => {
-      const entryDate = new Date(entry.startTime).toISOString().split('T')[0]
-      return entryDate === selectedDateStr
-    })
+      const entryDate = new Date(entry.startTime);
+      return (
+        entryDate.getFullYear() === selectedYear &&
+        entryDate.getMonth() === selectedMonth &&
+        entryDate.getDate() === selectedDay
+      );
+    });
     
-    setFilteredEntries(filtered)
+    setFilteredEntries(filtered);
   }
 
   useEffect(() => {
@@ -173,12 +179,22 @@ export default function SleepTracker() {
       const time = formData.get('time') as string
       const duration = parseFloat(formData.get('duration') as string)
       
-      const startTime = `${date}T${time}`
-      const endTime = calculateEndTime(date, time, duration)
+      // Create a date object with the specified local date and time
+      // Set to local timezone by creating a date string without timezone information
+      const localDateTimeStr = `${date}T${time}:00`
+      const startDateTime = new Date(localDateTimeStr)
+      
+      // Ensure the date is valid
+      if (isNaN(startDateTime.getTime())) {
+        throw new Error('Invalid date or time provided')
+      }
+      
+      // Calculate end time
+      const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000)
       
       const sleepData = {
-        startTime,
-        endTime,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
         duration,
         rating: selectedQuality?.value || 5,
         notes: formData.get('notes') as string || ''
@@ -304,8 +320,14 @@ export default function SleepTracker() {
   }
 
   const goToToday = () => {
-    setSelectedDate(new Date())
-    setViewMode('today')
+    // Create a new date at the start of today in local timezone
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day in local timezone
+    setSelectedDate(today);
+    setViewMode('today');
+    
+    // Re-filter entries with the newly set date
+    filterEntries(sleepEntries, 'today', today);
   }
 
   const handleDateSelect = (dateStr: string) => {
@@ -491,7 +513,12 @@ export default function SleepTracker() {
                     type="date"
                     id="date"
                     name="date"
-                    defaultValue={selectedDate.toISOString().split('T')[0]}
+                    defaultValue={selectedDate instanceof Date && !isNaN(selectedDate.getTime()) 
+                      ? new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000)
+                          .toISOString()
+                          .split('T')[0]
+                      : new Date().toISOString().split('T')[0]
+                    }
                     className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     required
                   />
