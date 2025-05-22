@@ -38,6 +38,7 @@ export default function AITrainer() {
   const [showProfileEditor, setShowProfileEditor] = useState(false)
   const [activeTab, setActiveTab] = useState<'plans' | 'profile'>('plans')
   const [profileIncomplete, setProfileIncomplete] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
 
   // Fetch profile on component mount
   useEffect(() => {
@@ -64,6 +65,31 @@ export default function AITrainer() {
       return () => clearTimeout(timer)
     }
   }, [successMessage])
+
+  // Close confirmation modal on escape key
+  useEffect(() => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showConfirmation) {
+        setShowConfirmation(false)
+      }
+    }
+    
+    window.addEventListener('keydown', handleEscapeKey)
+    return () => window.removeEventListener('keydown', handleEscapeKey)
+  }, [showConfirmation])
+
+  // Lock scroll when confirmation modal is open
+  useEffect(() => {
+    if (showConfirmation) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showConfirmation])
 
   // Refetch profile when profile editor is closed
   useEffect(() => {
@@ -143,9 +169,20 @@ export default function AITrainer() {
     }
   }
 
+  const handleGeneratePlan = () => {
+    if (plan) {
+      // Show confirmation dialog if there's an existing plan
+      setShowConfirmation(true)
+    } else {
+      // Generate directly if no plan exists
+      generateWorkoutPlan()
+    }
+  }
+
   const generateWorkoutPlan = async () => {
     setIsGenerating(true)
     setError(null)
+    setShowConfirmation(false) // Close the confirmation dialog if open
     
     try {
       const response = await fetch('/api/workouts/generate', {
@@ -236,7 +273,7 @@ export default function AITrainer() {
         
           {profile && (
             <button
-              onClick={generateWorkoutPlan}
+              onClick={handleGeneratePlan}
               disabled={isGenerating}
             className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg transition disabled:opacity-70 font-medium text-sm"
             >
@@ -341,7 +378,7 @@ export default function AITrainer() {
                   Generate your first AI workout plan tailored to your fitness profile and goals.
                 </p>
                 <button
-                  onClick={generateWorkoutPlan}
+                  onClick={handleGeneratePlan}
                   disabled={!profile || isGenerating}
                   className="bg-primary hover:bg-primary/90 text-white py-2 px-5 rounded-lg transition disabled:opacity-50 font-medium text-sm"
                 >
@@ -559,6 +596,53 @@ export default function AITrainer() {
             </div>
           )}
       </div>
+      
+      {/* Confirmation Dialog */}
+      <AnimatePresence>
+        {showConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowConfirmation(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-gray-900 border border-white/10 rounded-xl p-5 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="bg-red-500/20 p-2.5 rounded-full">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                </div>
+                <h3 className="text-lg font-semibold">Generate New Plan?</h3>
+              </div>
+              
+              <p className="text-gray-400 text-sm mb-5">
+                This will delete your current workout plan and all progress tracking. Are you sure you want to continue?
+              </p>
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowConfirmation(false)}
+                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={generateWorkoutPlan}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                >
+                  Yes, Replace Plan
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 } 

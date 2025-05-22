@@ -1,6 +1,8 @@
 'use client'
 
-import { Menu, Plus, Calendar, Search } from 'lucide-react'
+import { Menu, Plus, Calendar, MessageSquareText } from 'lucide-react'
+import { useState } from 'react'
+import ChatbotOverlay from './ChatbotOverlay'
 
 interface DashboardHeaderProps {
   title: string
@@ -13,6 +15,8 @@ export default function DashboardHeader({
   toggleSidebar,
   isSidebarOpen 
 }: DashboardHeaderProps) {
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false)
+
   return (
     <header className="bg-black border-b border-white/10 h-16 flex items-center px-4 lg:px-6">
       <div className="flex items-center gap-4 w-full">
@@ -52,15 +56,19 @@ export default function DashboardHeader({
             </button>
           )}
           
-          {/* Search button - can be expanded later */}
+          {/* Chatbot button - replaces search */}
           <button 
-            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-            aria-label="Search"
+            onClick={() => setIsChatbotOpen(true)}
+            className="p-2 rounded-lg bg-primary hover:bg-primary-dark text-white transition-colors"
+            aria-label="Chat with AI Assistant"
           >
-            <Search className="w-5 h-5" />
+            <MessageSquareText className="w-5 h-5" />
           </button>
         </div>
       </div>
+      
+      {/* Chatbot overlay */}
+      <ChatbotOverlay isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
     </header>
   )
 } 

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     // Check if the request was successful
     if (!response.ok) {
       // Get error details from response if available
-      console.log(response)
+      
       let errorData;
       try {
         errorData = await response.json();

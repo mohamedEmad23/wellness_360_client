@@ -46,7 +46,7 @@ export default function DashboardLayout({
   }
 
   // Check if current page should have full width
-  const isFullWidthPage = pathname === '/dashboard/trainer' || pathname === '/dashboard/activity';
+  const isFullWidthPage = pathname === '/dashboard/trainer' || pathname === '/dashboard/activity' || pathname === '/dashboard';
 
   if (isLoading) {
     return (
