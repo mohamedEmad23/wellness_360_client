@@ -243,11 +243,6 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
         date: selectedDateTime.toISOString()
       };
       
-      console.log('Submitting workout data:', {
-        url,
-        method: editingLog ? 'PATCH' : 'POST',
-        data: requestData
-      });
       
       const response = await fetch(url, {
         method: editingLog ? 'PATCH' : 'POST',
@@ -288,13 +283,8 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
     }
   }
 
-  const handleEdit = (log: ActivityLog) => {
-    console.log('Editing log:', log); // Debug log
-    console.log('Available activities:', activities); // Debug log
-    
-    // Find the matching activity by name
+  const handleEdit = (log: ActivityLog) => {    // Find the matching activity by name
     const matchingActivity = activities.find(a => a.name === log.activity);
-    console.log('Matching activity:', matchingActivity); // Debug log
     
     setEditingLog(log)
     // Parse the date from the log
@@ -561,21 +551,18 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
         </div>
       )}
 
-      {/* Header with Add Workout Button */}
-      <div className="flex justify-end">
-        <button 
-          onClick={() => setShowForm(true)}
-          className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm transition-colors"
-          disabled={showForm}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Log Workout</span>
-        </button>
-      </div>
-                  
       {/* Date Navigation */}
       <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3">
         <div className="flex items-center gap-1 sm:gap-2">
+          <button 
+            onClick={() => setShowForm(true)}
+            className="bg-primary p-1.5 sm:p-2 rounded-lg transition-colors"
+            aria-label={showForm ? 'Hide form' : 'Show form'}
+            disabled={showForm}
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          
           <button 
             onClick={goToPreviousDay}
             className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"

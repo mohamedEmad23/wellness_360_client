@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     if (period && ['daily', 'weekly', 'monthly'].includes(period)) {
       apiUrl += `?period=${period}`;
     }
-    
+  
     // Fetch from the backend API
     const response = await fetch(apiUrl, {
       method: 'GET',

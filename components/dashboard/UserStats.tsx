@@ -1,24 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, Moon, Utensils } from 'lucide-react';
+import { Activity, Moon, Utensils, BarChart, Calendar, Target } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, LegendProps } from 'recharts';
-
-interface CompletionRate {
-  workouts: number;
-  sleepLogs: number;
-  foodLogs: number;
-}
-
-interface UserStats {
-  totalWorkouts: number;
-  totalSleepLogs: number;
-  totalFoodLogs: number;
-  weeklyWorkouts: number;
-  weeklySleepLogs: number;
-  weeklyFoodLogs: number;
-  completionRate: CompletionRate;
-}
 
 interface ActivitySummary {
   period: string;
@@ -69,38 +53,25 @@ type Period = 'daily' | 'weekly' | 'monthly';
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B']; // Blue for protein, Green for carbs, Orange for fats
 
 export default function UserStats() {
-  const [stats, setStats] = useState<UserStats | null>(null);
   const [activitySummary, setActivitySummary] = useState<ActivitySummary | null>(null);
   const [sleepSummary, setSleepSummary] = useState<SleepSummary | null>(null);
   const [nutritionSummary, setNutritionSummary] = useState<NutritionSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>('daily');
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch('/api/dashboard?type=user-stats', {
-          credentials: 'include'
-        });
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user stats: ${response.status}`);
-        }
-        const data = await response.json();
-        setStats(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  useEffect(() => {
     const fetchSummaries = async () => {
       try {
+        // Only show full loading screen on initial load
+        if (!activitySummary && !sleepSummary && !nutritionSummary) {
+          setLoading(true);
+        } else {
+          // Otherwise, just indicate updating
+          setIsUpdating(true);
+        }
+        
         // Fetch all summaries in parallel
         const [activityRes, sleepRes, nutritionRes] = await Promise.all([
           fetch(`/api/dashboard?type=activity-summary&period=${period}`, { credentials: 'include' }),
@@ -131,6 +102,9 @@ export default function UserStats() {
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+        setIsUpdating(false);
       }
     };
 
@@ -145,20 +119,21 @@ export default function UserStats() {
     ];
 
     return (
-      <div className="h-48 mt-4">
+      <div className="h-48 flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
               cx="50%"
-              cy="50%"
+              cy="45%"
               innerRadius={40}
               outerRadius={60}
               paddingAngle={2}
               dataKey="value"
+              stroke="transparent"
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                <Cell key={`cell-${index}`} fill={COLORS[index]} strokeWidth={0} />
               ))}
             </Pie>
             <Legend
@@ -188,201 +163,157 @@ export default function UserStats() {
     );
   }
 
-  if (!stats) {
-    return null;
-  }
-
   return (
-    <div className="space-y-6">
-      {/* User Stats Overview */}
-      <div className="space-y-4">
-        {/* Total Stats - Full Width */}
-        <div className="bg-black/30 border border-white/5 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">Total Activity</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2 text-gray-300">
-              <p>Workouts: {stats.totalWorkouts}</p>
-              <p>Sleep Logs: {stats.totalSleepLogs}</p>
-              <p>Food Logs: {stats.totalFoodLogs}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Weekly Stats and Completion Rate - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Weekly Stats */}
-          <div className="bg-black/30 border border-white/5 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">This Week</h3>
-            <div className="space-y-2 text-gray-300">
-              <p>Workouts: {stats.weeklyWorkouts}</p>
-              <p>Sleep Logs: {stats.weeklySleepLogs}</p>
-              <p>Food Logs: {stats.weeklyFoodLogs}</p>
-            </div>
-          </div>
-
-          {/* Completion Rates */}
-          <div className="bg-black/30 border border-white/5 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Completion Rate</h3>
-            <div className="space-y-4">
-              {/* Workouts Progress */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-300">Workouts</span>
-                  <span className="text-sm text-gray-300">{stats.completionRate.workouts}%</span>
-                </div>
-                <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{ width: `${stats.completionRate.workouts}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Sleep Logs Progress */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-300">Sleep Logs</span>
-                  <span className="text-sm text-gray-300">{stats.completionRate.sleepLogs}%</span>
-                </div>
-                <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{ width: `${stats.completionRate.sleepLogs}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Food Logs Progress */}
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm text-gray-300">Food Logs</span>
-                  <span className="text-sm text-gray-300">{stats.completionRate.foodLogs}%</span>
-                </div>
-                <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{ width: `${stats.completionRate.foodLogs}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="w-full max-w-none px-0">
+      {/* Period Selection - Full Width with reduced height */}
+      <div className="flex overflow-x-auto bg-black/40 p-0.5 rounded-xl mb-4 w-full no-scrollbar">
+        <button
+          onClick={() => setPeriod('daily')}
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+            period === 'daily' 
+              ? 'bg-primary text-white' 
+              : 'text-gray-300 hover:text-white hover:bg-white/10'
+          }`}
+          disabled={isUpdating}
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          <span>Daily</span>
+        </button>
+        <button
+          onClick={() => setPeriod('weekly')}
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+            period === 'weekly' 
+              ? 'bg-primary text-white' 
+              : 'text-gray-300 hover:text-white hover:bg-white/10'
+          }`}
+          disabled={isUpdating}
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          <span>Weekly</span>
+        </button>
+        <button
+          onClick={() => setPeriod('monthly')}
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+            period === 'monthly' 
+              ? 'bg-primary text-white' 
+              : 'text-gray-300 hover:text-white hover:bg-white/10'
+          }`}
+          disabled={isUpdating}
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          <span>Monthly</span>
+        </button>
       </div>
 
-      {/* Period Selection */}
-      <div className="flex justify-center mt-6">
-        <div className="inline-flex rounded-lg border border-white/10 bg-black/30 p-1">
-          <button
-            onClick={() => setPeriod('daily')}
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
-              period === 'daily' 
-                ? 'bg-primary text-white' 
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Daily
-          </button>
-          <button
-            onClick={() => setPeriod('weekly')}
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
-              period === 'weekly' 
-                ? 'bg-primary text-white' 
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Weekly
-          </button>
-          <button
-            onClick={() => setPeriod('monthly')}
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
-              period === 'monthly' 
-                ? 'bg-primary text-white' 
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Monthly
-          </button>
-        </div>
-      </div>
-
-      {/* Summary Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Workout Summary */}
-        <div className="bg-black/30 border border-white/5 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Activity className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">Workout</h3>
-          </div>
-          {activitySummary ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-400">Workout Time</p>
-                <p className="text-xl font-semibold text-white">
-                  {activitySummary.stats.workoutTime.total} {activitySummary.stats.workoutTime.unit}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Calories Burned</p>
-                <p className="text-xl font-semibold text-white">
-                  {activitySummary.stats.caloriesBurned.total} {activitySummary.stats.caloriesBurned.unit}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Activities</p>
-                <p className="text-xl font-semibold text-white">{activitySummary.stats.activityCount.total}</p>
-              </div>
+      {/* Content Container */}
+      <div className="bg-black/40 border border-white/5 rounded-xl p-2 sm:p-3 w-full mx-0">
+        {/* Summary Sections - Full Width Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+          {/* Workout Summary */}
+          <div className="bg-black/60 border border-white/5 rounded-lg p-4 w-full relative">
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Workout</h3>
             </div>
-          ) : (
-            <div className="text-gray-400">Loading workout data...</div>
-          )}
-        </div>
-
-        {/* Nutrition Summary */}
-        <div className="bg-black/30 border border-white/5 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Utensils className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">Nutrition</h3>
+            {activitySummary ? (
+              <div className={`space-y-3 transition-opacity duration-300 ${isUpdating ? 'opacity-50' : ''}`}>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-black/40 p-3 rounded-lg">
+                    <p className="text-xs text-gray-400">Workout Time</p>
+                    <p className="text-lg font-semibold text-white">
+                      {activitySummary.stats.workoutTime.total} {activitySummary.stats.workoutTime.unit}
+                    </p>
+                  </div>
+                  <div className="bg-black/40 p-3 rounded-lg">
+                    <p className="text-xs text-gray-400">Calories Burned</p>
+                    <p className="text-lg font-semibold text-white">
+                      {activitySummary.stats.caloriesBurned.total} {activitySummary.stats.caloriesBurned.unit}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-black/40 p-3 rounded-lg">
+                  <p className="text-xs text-gray-400">Activities</p>
+                  <p className="text-lg font-semibold text-white">{activitySummary.stats.activityCount.total}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-400">Loading workout data...</div>
+            )}
+            {isUpdating && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm rounded-lg transition-opacity duration-300">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            )}
           </div>
-          {nutritionSummary ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-400">Calories</p>
-                <p className="text-xl font-semibold text-white">
-                  {nutritionSummary.stats.calories.total} {nutritionSummary.stats.calories.unit}
-                </p>
-              </div>
-              {renderMacroPieChart(nutritionSummary)}
-            </div>
-          ) : (
-            <div className="text-gray-400">Loading nutrition data...</div>
-          )}
-        </div>
 
-        {/* Sleep Summary */}
-        <div className="bg-black/30 border border-white/5 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Moon className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold">Sleep</h3>
-          </div>
-          {sleepSummary ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-400">Average Duration</p>
-                <p className="text-xl font-semibold text-white">
-                  {sleepSummary.stats.avgDuration.value} {sleepSummary.stats.avgDuration.unit}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-400">Average Rating</p>
-                <p className="text-xl font-semibold text-white">
-                  {sleepSummary.stats.avgRating.value} / {sleepSummary.stats.avgRating.scale}
-                </p>
-              </div>
+          {/* Nutrition Summary */}
+          <div className="bg-black/60 border border-white/5 rounded-lg p-4 w-full relative">
+            <div className="flex items-center gap-2 mb-3">
+              <Utensils className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Nutrition</h3>
             </div>
-          ) : (
-            <div className="text-gray-400">Loading sleep data...</div>
-          )}
+            {nutritionSummary ? (
+              <div className={`transition-opacity duration-300 ${isUpdating ? 'opacity-50' : ''}`}>
+                <div className="bg-black/40 p-3 rounded-lg mb-3">
+                  <p className="text-xs text-gray-400">Calories</p>
+                  <p className="text-lg font-semibold text-white">
+                    {nutritionSummary.stats.calories.total} {nutritionSummary.stats.calories.unit}
+                  </p>
+                </div>
+                <div className="bg-black/40 rounded-lg p-2">
+                  {renderMacroPieChart(nutritionSummary)}
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-400">Loading nutrition data...</div>
+            )}
+            {isUpdating && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm rounded-lg transition-opacity duration-300">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Sleep Summary */}
+          <div className="bg-black/60 border border-white/5 rounded-lg p-4 w-full relative">
+            <div className="flex items-center gap-2 mb-3">
+              <Moon className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Sleep</h3>
+            </div>
+            {sleepSummary ? (
+              <div className={`space-y-3 transition-opacity duration-300 ${isUpdating ? 'opacity-50' : ''}`}>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-black/40 p-3 rounded-lg">
+                    <p className="text-xs text-gray-400">Average Duration</p>
+                    <p className="text-lg font-semibold text-white">
+                      {sleepSummary.stats.avgDuration.value} {sleepSummary.stats.avgDuration.unit}
+                    </p>
+                  </div>
+                  <div className="bg-black/40 p-3 rounded-lg">
+                    <p className="text-xs text-gray-400">Average Rating</p>
+                    <p className="text-lg font-semibold text-white">
+                      {sleepSummary.stats.avgRating.value} / {sleepSummary.stats.avgRating.scale}
+                    </p>
+                  </div>
+                </div>
+                {sleepSummary.stats.consistency && (
+                  <div className="bg-black/40 p-3 rounded-lg">
+                    <p className="text-xs text-gray-400">Sleep Consistency</p>
+                    <p className="text-lg font-semibold text-white">
+                      {sleepSummary.stats.consistency.value} {sleepSummary.stats.consistency.unit}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-gray-400">Loading sleep data...</div>
+            )}
+            {isUpdating && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/10 backdrop-blur-sm rounded-lg transition-opacity duration-300">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

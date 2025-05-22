@@ -355,42 +355,39 @@ export default function NutritionTracker() {
         </div>
       )}
 
-      {/* Header with Add Food Button */}
-      <div className="flex justify-end">
-        <button 
-          onClick={() => setIsAddingEntry(true)}
-          className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm transition-colors"
-          disabled={isAddingEntry}
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Log Food</span>
-        </button>
-      </div>
-
       {/* Date Navigation */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center justify-between bg-black/30 border border-white/5 rounded-lg p-2 sm:p-3 mb-3">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => setIsAddingEntry(prev => !prev)}
-            className={`${isAddingEntry ? 'bg-primary' : 'bg-white/10'} p-1.5 sm:p-2 rounded-lg transition-colors`}
+            className="bg-primary p-1.5 sm:p-2 rounded-lg transition-colors"
             aria-label={isAddingEntry ? 'Hide form' : 'Show form'}
           >
             <Plus className="w-4 h-4" />
           </button>
           
+          <button 
+            onClick={goToPreviousDay}
+            className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Previous day"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
           <div className="relative">
             <button
               onClick={() => setIsDatePickerOpen(prev => !prev)}
-              className="bg-white/5 hover:bg-white/10 rounded-lg px-2 sm:px-3 py-1.5 text-sm transition-colors flex items-center gap-1.5"
+              className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 hover:bg-white/10 rounded-lg transition-colors text-sm"
             >
-              {viewMode === 'today' ? (
-                <>Today</>
-              ) : viewMode === 'date' ? (
-                <>{formatSelectedDate(selectedDate)}</>
-              ) : (
-                <>All Logs</>
-              )}
-              <ChevronDown className="w-3 h-3" />
+              <Calendar className="w-3.5 h-3.5" />
+              <span>
+                {viewMode === 'all' 
+                  ? 'All Logs' 
+                  : viewMode === 'today' 
+                    ? 'Today' 
+                    : formatSelectedDate(selectedDate)}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5" />
             </button>
             
             {isDatePickerOpen && (
@@ -445,7 +442,7 @@ export default function NutritionTracker() {
           </button>
         </div>
         
-        <div className="text-xs text-gray-400">
+        <div className="text-xs sm:text-sm text-gray-400">
           {filteredLogs.length} {filteredLogs.length === 1 ? 'entry' : 'entries'}
         </div>
       </div>
