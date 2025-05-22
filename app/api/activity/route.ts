@@ -171,4 +171,115 @@ export async function DELETE(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * PATCH handler to update an existing activity log
+ */
+export async function PATCH(req: NextRequest) {
+  const accessToken = cookies().get('access_token')?.value;
+  const url = new URL(req.url);
+  const id = url.searchParams.get('id');
+  
+  console.log('PATCH request received for ID:', id); // Debug log
+  
+  if (!id) {
+    console.log('No ID provided in PATCH request'); // Debug log
+    return NextResponse.json(
+      { error: 'Activity ID is required as a query parameter' },
+      { status: 400 }
+    );
+  }
+  
+  try {
+    // Parse the request body
+    const body = await req.json();
+    console.log('PATCH request body:', body); // Debug log
+
+    // Make sure required fields are present
+    if (!body.activityId || !body.duration || !body.title || !body.date) {
+      console.log('Missing required fields in PATCH request:', {
+        hasActivityId: !!body.activityId,
+        hasDuration: !!body.duration,
+        hasTitle: !!body.title,
+        hasDate: !!body.date
+      }); // Debug log
+      return NextResponse.json(
+        { error: 'Missing required fields: activityId, duration, title, and date are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate the date
+    const date = new Date(body.date);
+    if (isNaN(date.getTime())) {
+      console.log('Invalid date format in PATCH request:', body.date); // Debug log
+      return NextResponse.json(
+        { error: 'Invalid date format' },
+        { status: 400 }
+      );
+    }
+
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/user-activity/${id}`;
+    console.log('Making PATCH request to:', apiUrl); // Debug log
+    console.log('Request payload:', {
+      activityId: body.activityId,
+      duration: Number(body.duration),
+      title: body.title,
+      date: body.date
+    }); // Debug log
+
+    // Update the activity log via the backend API
+    const response = await fetch(apiUrl, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        activityId: body.activityId,
+        duration: Number(body.duration),
+        title: body.title,
+        date: body.date
+      }),
+    });
+
+    // Check if the request was successful
+    if (!response.ok) {
+      // Get error details from response if available
+      let errorData;
+      try {
+        errorData = await response.json();
+        console.log('Backend API error response:', errorData); // Debug log
+      } catch (e) {
+        console.log('Failed to parse error response:', e); // Debug log
+        errorData = { message: 'Unknown error' };
+      }
+      
+      // Return the error response
+      return NextResponse.json(
+        { error: errorData.message || 'Failed to update activity' },
+        { status: response.status }
+      );
+    }
+
+    // Parse the response body as JSON
+    const data = await response.json();
+    console.log('Backend API success response:', data); // Debug log
+
+    // Return the data with proper status
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    console.error('Error updating activity:', error);
+    console.log('Full error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    }); // Debug log
+    
+    // Return an error response
+    return NextResponse.json(
+      { error: 'Failed to update activity' },
+      { status: 500 }
+    );
+  }
 } 

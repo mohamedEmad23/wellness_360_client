@@ -35,7 +35,8 @@ import {
   Filter,
   Clock,
   Info,
-  RefreshCw
+  RefreshCw,
+  Pencil
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -86,6 +87,7 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
   const [viewMode, setViewMode] = useState<ViewMode>('today')
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
+  const [editingLog, setEditingLog] = useState<ActivityLog | null>(null)
 
   // Add useEffect to fetch activities and user logs on mount
   useEffect(() => {
@@ -178,7 +180,7 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
       }
       
       const data = await response.json()
-      console.log('Fetched activity logs:', data) // Debug log
+      
       
       // Check if data is an array
       if (!Array.isArray(data)) {
@@ -199,7 +201,7 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
         return isValid
       })
 
-      console.log('Valid logs:', validLogs) // Debug log
+      
       setUserActivityLogs(validLogs)
       // Filter logs based on current view mode
       filterLogs(validLogs, viewMode, selectedDate)
@@ -230,23 +232,39 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
       const selectedDateTime = new Date(selectedDate)
       selectedDateTime.setHours(12, 0, 0, 0) // Set to noon to avoid timezone issues
       
-      const response = await fetch('/api/activity', {
-        method: 'POST',
+      const url = editingLog 
+        ? `/api/activity?id=${editingLog._id}`
+        : '/api/activity';
+      
+      const requestData = {
+        activityId: formData.activityId,
+        duration: Number(formData.duration),
+        title: formData.title,
+        date: selectedDateTime.toISOString()
+      };
+      
+      console.log('Submitting workout data:', {
+        url,
+        method: editingLog ? 'PATCH' : 'POST',
+        data: requestData
+      });
+      
+      const response = await fetch(url, {
+        method: editingLog ? 'PATCH' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          activityId: formData.activityId,
-          duration: Number(formData.duration),
-          title: formData.title,
-          date: selectedDateTime.toISOString()
-        }),
+        body: JSON.stringify(requestData),
       })
       
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('API error:', response.status, errorText)
-        throw new Error('Failed to save activity')
+        console.error('API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        });
+        throw new Error(`Failed to ${editingLog ? 'update' : 'save'} activity: ${errorText}`)
       }
       
       // Reset form and close
@@ -257,16 +275,47 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
       })
       
       setShowForm(false)
+      setEditingLog(null)
       
       // Refresh user activity logs after successful submission
-      fetchUserActivityLogs()
+      await fetchUserActivityLogs()
       
     } catch (error) {
       console.error('Error submitting activity:', error)
-      setError('Failed to save activity. Please try again.')
+      setError(error instanceof Error ? error.message : 'Failed to save activity. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleEdit = (log: ActivityLog) => {
+    console.log('Editing log:', log); // Debug log
+    console.log('Available activities:', activities); // Debug log
+    
+    // Find the matching activity by name
+    const matchingActivity = activities.find(a => a.name === log.activity);
+    console.log('Matching activity:', matchingActivity); // Debug log
+    
+    setEditingLog(log)
+    // Parse the date from the log
+    const logDate = new Date(log.date)
+    setSelectedDate(logDate)
+    setFormData({
+      activityId: matchingActivity?.id || log.activity, // Use the activity ID if found, fallback to the name
+      title: log.title,
+      duration: log.duration.toString()
+    })
+    setShowForm(true)
+  }
+
+  const handleCancel = () => {
+    setEditingLog(null)
+    setFormData({
+      activityId: '',
+      title: '',
+      duration: ''
+    })
+    setShowForm(false)
   }
 
   // Format date to a more readable format
@@ -462,19 +511,19 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
 
   const getSelectedActivityName = () => {
     const selectedActivity = activities.find(a => a.id === formData.activityId)
-    return selectedActivity ? selectedActivity.name : 'Select an activity'
+    return selectedActivity ? selectedActivity.name : formData.activityId // Fallback to the ID if no matching activity found
   }
 
   // Use effect to generate a random workout when form is shown
   useEffect(() => {
-    if (showForm && activities.length > 0) {
+    if (showForm && activities.length > 0 && !editingLog) {
       generateRandomWorkout()
     }
-  }, [showForm, activities.length])
+  }, [showForm, activities.length, editingLog])
 
   // Generate a random workout
   const generateRandomWorkout = () => {
-    if (activities.length === 0) {
+    if (activities.length === 0 || editingLog) {
       return
     }
     
@@ -634,9 +683,9 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
             className="bg-black/50 border border-white/10 rounded-xl p-4 mb-4 w-full mx-0"
           >
             <div className="flex justify-between items-center mb-3">
-              <h3 className="text-base font-medium">Log Workout</h3>
+              <h3 className="text-base font-medium">{editingLog ? 'Edit Workout' : 'Log Workout'}</h3>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={handleCancel}
                 className="text-gray-400 hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -703,41 +752,58 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
                 />
               </div>
 
-              <div>
-                <label htmlFor="duration" className="block text-xs font-medium text-gray-300 mb-1">
-                  Duration (minutes)
-                </label>
-                <input
-                  type="number"
-                  id="duration"
-                  name="duration"
-                  min="1"
-                  value={formData.duration}
-                  onChange={handleChange}
-                  className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="duration" className="block text-xs font-medium text-gray-300 mb-1">
+                    Duration (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    id="duration"
+                    name="duration"
+                    min="1"
+                    value={formData.duration}
+                    onChange={handleChange}
+                    className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="date" className="block text-xs font-medium text-gray-300 mb-1">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    id="date"
+                    name="date"
+                    value={selectedDate.toISOString().split('T')[0]}
+                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                    className="w-full p-2 sm:p-3 bg-black/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  />
+                </div>
               </div>
               
               <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 text-xs text-blue-200">
                 <p className="flex items-center gap-2">
                   <Info className="w-4 h-4 text-blue-400" />
-                  <span>A sample workout has been generated for you. You can adjust it as needed.</span>
+                  <span>{editingLog ? 'Edit your workout details below.' : 'A sample workout has been generated for you. You can adjust it as needed.'}</span>
                 </p>
               </div>
 
               <div className="mt-4 flex justify-between sm:justify-end gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={generateRandomWorkout}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm flex items-center gap-1.5"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Generate</span>
-                </button>
+                {!editingLog && (
+                  <button
+                    type="button"
+                    onClick={generateRandomWorkout}
+                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors text-sm flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Generate</span>
+                  </button>
+                )}
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowForm(false)}
+                    onClick={handleCancel}
                     className="px-3 py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-colors text-sm"
                   >
                     Cancel
@@ -747,7 +813,7 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
                     disabled={isSubmitting || !formData.activityId || !formData.duration}
                     className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none text-sm"
                   >
-                    {isSubmitting ? 'Saving...' : 'Save'}
+                    {isSubmitting ? 'Saving...' : editingLog ? 'Update' : 'Save'}
                   </button>
                 </div>
               </div>
@@ -805,13 +871,22 @@ export default function WorkoutTracker({ showForm, setShowForm, period = 'daily'
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => confirmDelete(log._id, log.title || log.activity)}
-                className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                aria-label="Delete"
-              >
-                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handleEdit(log)}
+                  className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  aria-label="Edit"
+                >
+                  <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+                <button
+                  onClick={() => confirmDelete(log._id, log.title || log.activity)}
+                  className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
