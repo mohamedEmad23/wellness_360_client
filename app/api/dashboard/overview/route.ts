@@ -8,7 +8,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const apiUrl = process.env.API_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://wellness-360-server.onrender.com';
     const response = await fetch(`${apiUrl}/dashboard/overview`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
