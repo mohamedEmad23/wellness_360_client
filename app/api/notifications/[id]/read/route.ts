@@ -33,7 +33,6 @@ export async function PATCH(
       }
 
       const result = await response.json();
-      console.log("Notification read update error:", result);
       return NextResponse.json(
         {
           success: false,
