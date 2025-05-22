@@ -75,14 +75,16 @@ export default function Header() {
     
             <div className="h-4 w-px bg-white/10" />
             
-            {/* Chatbot Button */}
-            <button
-              onClick={() => setIsChatbotOpen(true)}
-              className="flex items-center gap-2 p-2 bg-primary rounded-full text-white hover:bg-primary-dark transition-all duration-300"
-              aria-label="Open AI assistant"
-            >
-              <MessageSquareText className="w-5 h-5" />
-            </button>
+            {/* Chatbot Button - Only show if authenticated */}
+            {isAuthenticated && (
+              <button
+                onClick={() => setIsChatbotOpen(true)}
+                className="flex items-center gap-2 p-2 bg-primary rounded-full text-white hover:bg-primary-dark transition-all duration-300"
+                aria-label="Open AI assistant"
+              >
+                <MessageSquareText className="w-5 h-5" />
+              </button>
+            )}
             
             {isAuthenticated ? (
               <div className="relative" ref={dropdownRef}>
@@ -182,17 +184,19 @@ export default function Header() {
               </Link> 
               <div className="h-px bg-white/10 my-2" />
               
-              {/* Mobile Chatbot Button */}
-              <button 
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsChatbotOpen(true);
-                }}
-                className="flex items-center gap-2 text-gray-300 hover:text-white transition-all duration-300 px-2 py-2 rounded-lg hover:bg-white/5"
-              >
-                <MessageSquareText className="w-4 h-4" />
-                Chat with AI Assistant
-              </button>
+              {/* Mobile Chatbot Button - Only show if authenticated */}
+              {isAuthenticated && (
+                <button 
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsChatbotOpen(true);
+                  }}
+                  className="flex items-center gap-2 text-gray-300 hover:text-white transition-all duration-300 px-2 py-2 rounded-lg hover:bg-white/5"
+                >
+                  <MessageSquareText className="w-4 h-4" />
+                  Chat with AI Assistant
+                </button>
+              )}
               
               {isAuthenticated ? (
                 <>
@@ -249,8 +253,8 @@ export default function Header() {
         </div>
       </div>
       
-      {/* Add ChatbotOverlay to the Header component */}
-      <ChatbotOverlay isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
+      {/* Add ChatbotOverlay to the Header component only if authenticated */}
+      {isAuthenticated && <ChatbotOverlay isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />}
     </header>
   )
 } 
