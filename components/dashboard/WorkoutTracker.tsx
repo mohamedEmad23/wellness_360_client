@@ -57,11 +57,12 @@ interface ActivityLog {
 interface WorkoutTrackerProps {
   showForm: boolean;
   setShowForm: Dispatch<SetStateAction<boolean>>;
+  period?: 'daily' | 'weekly' | 'monthly';
 }
 
 type ViewMode = 'today' | 'all' | 'date'
 
-export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTrackerProps) {
+export default function WorkoutTracker({ showForm, setShowForm, period = 'daily' }: WorkoutTrackerProps) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [userActivityLogs, setUserActivityLogs] = useState<ActivityLog[]>([])
   const [filteredLogs, setFilteredLogs] = useState<ActivityLog[]>([])
@@ -116,15 +117,32 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     
     // Filter logs for the selected date
     const filtered = logs.filter(log => {
-      const logDate = new Date(log.date).toISOString().split('T')[0]
-      return logDate === selectedDateStr
+      try {
+        // Check if date exists and is valid
+        if (!log.date) {
+          console.warn('Log missing date:', log)
+          return false
+        }
+
+        const logDate = new Date(log.date)
+        if (isNaN(logDate.getTime())) {
+          console.warn('Invalid date in log:', log)
+          return false
+        }
+
+        const logDateStr = logDate.toISOString().split('T')[0]
+        return logDateStr === selectedDateStr
+      } catch (error) {
+        console.error('Error processing log date:', error, log)
+        return false
+      }
     })
     
     setFilteredLogs(filtered)
   }
 
+  // Update filtered logs when view mode or selected date changes
   useEffect(() => {
-    // Update filtered logs when view mode or selected date changes
     filterLogs(userActivityLogs, viewMode, selectedDate)
   }, [viewMode, selectedDate, userActivityLogs])
 
@@ -160,11 +178,35 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
       }
       
       const data = await response.json()
-      setUserActivityLogs(data)
+      console.log('Fetched activity logs:', data) // Debug log
+      
+      // Check if data is an array
+      if (!Array.isArray(data)) {
+        console.error('Expected array of logs but got:', typeof data)
+        setUserActivityLogs([])
+        return
+      }
+
+      // Validate each log has required fields
+      const validLogs = data.filter(log => {
+        const isValid = log && typeof log === 'object' && 
+                       'date' in log && 
+                       'activity' in log && 
+                       'duration' in log
+        if (!isValid) {
+          console.warn('Invalid log entry:', log)
+        }
+        return isValid
+      })
+
+      console.log('Valid logs:', validLogs) // Debug log
+      setUserActivityLogs(validLogs)
       // Filter logs based on current view mode
-      filterLogs(data, viewMode, selectedDate)
+      filterLogs(validLogs, viewMode, selectedDate)
     } catch (error) {
+      console.error('Error fetching logs:', error)
       setError('Could not load activities. Please try again.')
+      setUserActivityLogs([])
     } finally {
       setIsLoadingLogs(false)
     }
@@ -184,6 +226,10 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
     setError(null)
     
     try {      
+      // Format the selected date to include time
+      const selectedDateTime = new Date(selectedDate)
+      selectedDateTime.setHours(12, 0, 0, 0) // Set to noon to avoid timezone issues
+      
       const response = await fetch('/api/activity', {
         method: 'POST',
         headers: {
@@ -192,7 +238,8 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
         body: JSON.stringify({
           activityId: formData.activityId,
           duration: Number(formData.duration),
-          title: formData.title
+          title: formData.title,
+          date: selectedDateTime.toISOString()
         }),
       })
       
@@ -224,12 +271,21 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
 
   // Format date to a more readable format
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date string:', dateString)
+        return 'Invalid date'
+      }
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString)
+      return 'Invalid date'
+    }
   }
 
   // Custom dropdown handlers
@@ -326,7 +382,19 @@ export default function WorkoutTracker({ showForm, setShowForm }: WorkoutTracker
 
   // Get unique dates from all activity logs
   const getUniqueDates = () => {
-    const dates = userActivityLogs.map(log => new Date(log.date).toISOString().split('T')[0])
+    const dates = userActivityLogs
+      .map(log => {
+        try {
+          if (!log.date) return null
+          const date = new Date(log.date)
+          return isNaN(date.getTime()) ? null : date.toISOString().split('T')[0]
+        } catch (error) {
+          console.error('Error processing date:', error, log)
+          return null
+        }
+      })
+      .filter((date): date is string => date !== null)
+    
     return [...new Set(dates)].sort().reverse() // Sort by most recent first
   }
 

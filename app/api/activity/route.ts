@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
       apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/user-activity/activities`;
     }
     
+    console.log('Fetching from:', apiUrl) // Debug log
+    
     // Fetch from the backend API
     const response = await fetch(apiUrl, {
       method: 'GET',
@@ -30,12 +32,14 @@ export async function GET(req: NextRequest) {
 
     // Check if the request was successful
     if (!response.ok) {
+      console.error('API response not ok:', response.status) // Debug log
       // If not, throw an error with the status
       throw new Error(`Failed to fetch data: ${response.status}`);
     }
 
     // Parse the response body as JSON
     const data = await response.json();
+    console.log('API response data:', data) // Debug log
 
     // Return the data with proper status
     return NextResponse.json(data, { status: 200 });
@@ -61,9 +65,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Make sure required fields are present
-    if (!body.activityId || !body.duration || !body.title) {
+    if (!body.activityId || !body.duration || !body.title || !body.date) {
       return NextResponse.json(
-        { error: 'Missing required fields: activityId, duration, and title are required' },
+        { error: 'Missing required fields: activityId, duration, title, and date are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate the date
+    const date = new Date(body.date);
+    if (isNaN(date.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid date format' },
         { status: 400 }
       );
     }
@@ -78,7 +91,8 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         activityId: body.activityId,
         duration: Number(body.duration),
-        title: body.title
+        title: body.title,
+        date: body.date
       }),
     });
 
